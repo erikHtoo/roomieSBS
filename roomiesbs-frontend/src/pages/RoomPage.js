@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import Navbar from "./components/navbar.jsx";
+import Navbar from "../components/navbar.jsx";
 
 // helper to parse image_urls (like HomePage)
 const parseImageUrls = (val) => {
@@ -37,7 +37,7 @@ export default function RoomPage() {
   useEffect(() => {
     const fetchRoom = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/room/${roomId}`, {
+        const res = await axios.get(`http://localhost:5000/rooms/${roomId}`, {
           timeout: 20000,
         });
         if (!res.data?.room) throw new Error("Room not found");
@@ -127,9 +127,25 @@ export default function RoomPage() {
               {room.address}
             </a>
           </p>
-          <p>
-            <span className="font-semibold">📞 Contact:</span>{" "}
-            {room.contact || "-"}
+            <p>
+            <span className="font-semibold">📞 Contact:</span>
+            <div className="ml-2 space-y-1">
+              {room.contact?.facebook && (
+                <div>
+                  Facebook:{" "}
+                  <a
+                    href={room.contact.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    {room.contact.facebook}
+                  </a>
+                </div>
+              )}
+              {room.contact?.zalo && <div>Zalo: {room.contact.zalo}</div>}
+              {room.contact?.viber && <div>Viber: {room.contact.viber}</div>}
+            </div>
           </p>
           <p>
             <span className="font-semibold">📝 About Roomies:</span>{" "}

@@ -12,15 +12,13 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// IMPORT ROUTES
-const roomRoutes = require("./routes/room");
-app.use("/room", roomRoutes);
-const roomsRoute = require("./routes/rooms.js");
-app.use("/rooms", roomsRoute);
-const postingRoute = require('./routes/posting.js');
-app.use('/posting', postingRoute);
-const editingRoute = require('./routes/editing.js');
-app.use('/edit', editingRoute);
+// Room routes
+const roomRoutes = require("./routes/rooms.js");
+app.use("/rooms", roomRoutes);
+
+// Roommate profile routes
+const roommatesRouter = require('./routes/roommateProfiles');
+app.use('/roommates', roommatesRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
