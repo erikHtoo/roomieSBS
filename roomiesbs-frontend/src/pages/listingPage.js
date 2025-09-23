@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar.jsx";
+import { FiSearch, FiHome, FiUpload } from "react-icons/fi";
+import { useIsMobile } from "../utils/isMobile.js";
 
 const parseImageUrls = (val) => {
   if (!val) return [];
@@ -27,6 +29,9 @@ const parseImageUrls = (val) => {
 };
 
 export default function ListingPage() {
+  
+    const isMobile = useIsMobile();
+
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -86,27 +91,64 @@ export default function ListingPage() {
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="max-w-4xl mx-auto px-6 mt-10 mb-8 text-center">
+    {/* Hero Section */}
+{/* Hero Section */}
+      <section className="max-w-4xl mx-auto px-6 mt-10 mb-8 text-center space-y-3">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-700">
-          Find the Perfect Room for You!
+          Find your SBS Roommate
         </h1>
-        <p className="text-gray-500 mt-3 text-base sm:text-lg">
-          Browse available rooms and discover your next home — simple, clear, and convenient.
-        </p>
+
+        {/* Row of upload + look at rooms */}
+        <div className="flex items-center justify-center gap-3">
+          <Link
+            to="/"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow hover:opacity-90 transition"
+          >
+            <FiHome size={18} />
+            Find Roommates
+            <span className="ml-1">
+              {/* Navigation arrow */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </span>
+          </Link>
+
+          <Link
+            to="/create-profile"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
+          >
+            <FiUpload size={18} />
+            Upload Room
+          </Link>
+        </div>
       </section>
 
       {/* Filter Row */}
       <div className="max-w-7xl mx-auto px-6 mb-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Search Bar */}
-          <input
-            type="text"
-            placeholder="Search rooms..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-400"
-          />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Search Bar + Icon */}
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Search profiles..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-400"
+            />
+            <span
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition"
+            >
+              <FiSearch size={20} />
+            </span>
+          </div>
 
           {/* Budget Filter */}
           <select
@@ -120,14 +162,6 @@ export default function ListingPage() {
             <option value="5-7">5M - 7M</option>
             <option value="7-above">7M+</option>
           </select>
-
-          {/* Upload Button */}
-          <Link
-            to="/upload"
-            className="px-5 py-3 rounded-lg font-semibold text-white shadow-md hover:opacity-90 transition bg-gradient-to-r from-rose-500 via-pink-500 to-red-500"
-          >
-            + Upload Room
-          </Link>
         </div>
       </div>
 

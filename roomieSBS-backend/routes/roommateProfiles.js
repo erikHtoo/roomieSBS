@@ -130,7 +130,7 @@ router.put("/", authmiddleWare.verifyAuth, async (req, res) => {
 });
 
 // DELETE (remove profile)
-router.delete("/", authmiddleWare.verifyAuth, async (req, res) => {
+router.delete("/:id", authmiddleWare.verifyAuth, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("roommates_table")
