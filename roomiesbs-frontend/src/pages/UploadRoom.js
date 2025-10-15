@@ -1,393 +1,557 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import Navbar from "../components/navbar";
 import axios from "axios";
-import { supabase } from "../supabaseClient.js";
-import { useAuth } from "../auth/useAuth.js";
-import Navbar from "../components/navbar.jsx";
-import ContactField from "../components/contactField.jsx";
-import NumberInput from "../components/numberInput.jsx";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
+import {
+  FaParking,
+  FaSwimmingPool,
+  FaDumbbell,
+  FaPaw,
+  FaCouch,
+  FaBuilding,
+} from "react-icons/fa";
 
-const MAX_FILES = 12;
-const MAX_MB = 8; // per file
-const ACCEPT = ["image/png", "image/jpeg", "image/webp"];
+const UploadRoom = () => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    address: "",
+    rent: "",
+    deposit: "",
+    roomType: "",
+    bedrooms: "",
+    bathrooms: "",
+    amenities: [],
+    about: "",
+    transferContract: false,
+    remainingContract: "",
+    zalo: "",
+    facebook: "",
+    viber: "",
+    imageUrls: [],
+  });
 
-export default function UploadRoom() {
-  const fileInputRef = useRef(null);
+  const handleNext = () => setStep((prev) => Math.min(prev + 1, 3));
+  const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
-  // Form fields
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [priceText, setPriceText] = useState("");
-  const [deposit, setDeposit] = useState("");
-  const [address, setAddress] = useState("");
-  const [contact, setContact] = useState({});
-  const [transferContract, setTransferContract] = useState(false);
-  const [remainingContract, setRemainingContract] = useState("");
-  const [otherContractMonths, setOtherContractMonths] = useState("");
+  const handleChange = (key, value) => setForm({ ...form, [key]: value });
 
-  // Images state: array of { file: File, preview: objectURL }
-  const [images, setImages] = useState([]);
-
-  // UX
-  const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState([]);
-  const [message, setMessage] = useState("");
-
-  const { user, session } = useAuth?.() || { user: null, session: null };
-  const ownerId = useMemo(() => user?.id, [user]);
-
-  useEffect(() => {
-    return () => {
-      images.forEach((img) => URL.revokeObjectURL(img.preview));
-    };
-  }, [images]);
-
-  const formatNumber = (num) => {
-    if (!num) return "";
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
-
-  const handlePriceChange = (e) => {
-    const raw = e.target.value.replace(/,/g, ""); // remove commas
-    if (/^\d*$/.test(raw)) { // allow only digits
-      setPriceText(raw);
-    }
-  };
-
-  const handleDepositChange = (e) => {
-    const raw = e.target.value.replace(/,/g, "");
-    if (/^\d*$/.test(raw)) {
-      setDeposit(raw);
-    }
-  };
-
-  const openFilePicker = () => fileInputRef.current?.click();
-
-  const validateFile = (file) => {
-    const problems = [];
-    if (!ACCEPT.includes(file.type)) problems.push("Only PNG/JPG/WebP allowed.");
-    if (file.size > MAX_MB * 1024 * 1024) problems.push(`Max ${MAX_MB}MB per file.`);
-    return problems;
-  };
-
-  const addFiles = (fileList) => {
-    const next = [...images];
-    const newErrors = [];
-    for (const file of fileList) {
-      if (next.length >= MAX_FILES) {
-        newErrors.push(`Max ${MAX_FILES} images.`);
-        break;
-      }
-      const probs = validateFile(file);
-      if (probs.length) {
-        newErrors.push(`${file.name}: ${probs.join(" ")}`);
-        continue;
-      }
-      next.push({ file, preview: URL.createObjectURL(file) });
-    }
-    setImages(next);
-    if (newErrors.length) setErrors(newErrors);
-  };
-
-  const onFileInputChange = (e) => {
-    if (e.target.files?.length) {
-      addFiles(e.target.files);
-      e.target.value = "";
-    }
-  };
-
-  const removeImageAt = (idx) => {
-    const next = [...images];
-    const [removed] = next.splice(idx, 1);
-    if (removed?.preview) URL.revokeObjectURL(removed.preview);
-    setImages(next);
+  const handleAmenityToggle = (amenity) => {
+    setForm((prev) => {
+      const amenities = prev.amenities.includes(amenity)
+        ? prev.amenities.filter((a) => a !== amenity)
+        : [...prev.amenities, amenity];
+      return { ...prev, amenities };
+    });
   };
 
   const slugify = (s) =>
-    s.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-_.]/g, "");
+    s
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9\-_.]/g, "");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrors([]);
-    setMessage("");
-    setSubmitting(true);
+  // Validation functions
+  const validateStep1 = () => {
+    const requiredFields = ["address", "roomType", "rent", "deposit"];
+    return requiredFields.every((field) => form[field]?.trim() !== "");
+  };
 
+  const validateStep2 = () => {
+    const requiredFields = [
+      "bedrooms",
+      "bathrooms",
+      "about",
+      "zalo",
+      "faecbook",
+      "viber",
+    ];
+    return requiredFields.every((field) => form[field]?.trim() !== "");
+  };
+
+  const validateAll = () => {
+    // all required except transferContract
+    const requiredFields = [
+      "title",
+      "price",
+      "address",
+      "city",
+      "district",
+      "description",
+      "roomType",
+      "size",
+      "floor",
+    ];
+    return (
+      requiredFields.every((field) => form[field]?.trim() !== "") &&
+      form.imageUrls.length > 0
+    ); // must have at least one image
+  };
+
+  const handleSubmit = async () => {
     try {
-      const image_urls = [];
-      for (let i = 0; i < images.length; i++) {
-        const f = images[i].file;
-        const path = `${ownerId}/${Date.now()}-${i}-${slugify(f.name)}`;
-        const { error: uploadError } = await supabase.storage
-          .from("room-images")
-          .upload(path, f, { cacheControl: "3600", upsert: false });
-        if (uploadError) throw uploadError;
+      const {
+        address,
+        rent,
+        deposit,
+        roomType,
+        bedrooms,
+        bathrooms,
+        amenities,
+        about,
+        transferContract,
+        remainingContract,
+        zalo,
+        facebook,
+        viber,
+        imageUrls, // these are File objects now, not just names
+      } = form;
 
-        const { data: pub } = supabase.storage.from("room-images").getPublicUrl(path);
-        if (!pub?.publicUrl) throw new Error("Failed to get public URL");
-        image_urls.push(pub.publicUrl);
+      // 1️⃣ Get current user + token
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      const ownerId = data?.session?.user?.id;
+
+      if (!token || !ownerId) {
+        toast.error("You must be logged in to post a room.");
+        return;
       }
 
-      await axios.post(
+      // 2️⃣ Generate timestamp for grouping image uploads
+      const createdAt = new Date().toISOString();
+
+      // 3️⃣ Upload images first (using ownerId + createdAt)
+      const uploadedUrls = [];
+      for (let i = 0; i < imageUrls.length; i++) {
+        const file = imageUrls[i];
+        const filePath = `${ownerId}/${createdAt}-${i}-${slugify(file.name)}`;
+        const { error: uploadError } = await supabase.storage
+          .from("room-images")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error("Upload failed:", uploadError);
+          toast.error(`Failed to upload ${file.name}`);
+          continue;
+        }
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from("room-images")
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrlData.publicUrl);
+      }
+
+      // 4️⃣ Create room (with image URLs)
+      const payload = {
+        description: about,
+        rent,
+        deposit,
+        image_urls: uploadedUrls, // already uploaded
+        address,
+        contact: { zalo, facebook, viber },
+        transfer_contract: transferContract,
+        remaining_contract: remainingContract,
+        category: roomType,
+        bedrooms,
+        bathrooms,
+        amenities,
+        created_at: createdAt,
+      };
+
+      const createRes = await axios.post(
         "http://localhost:5000/rooms",
+        payload,
         {
-          room_name: name,
-          description,
-          price: priceText,
-          deposit,
-          image_urls,
-          address,
-          contact: JSON.stringify(contact),
-          owner_id: ownerId,
-          transfer_contract: transferContract,
-          remaining_contract: transferContract
-          ? remainingContract === "other"
-            ? otherContractMonths
-            : remainingContract
-          : null,
-        },
-        {
-          headers: session?.access_token
-            ? { Authorization: `Bearer ${session.access_token}` }
-            : undefined,
-          timeout: 20000,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
-      setMessage("Room uploaded successfully!");
-      setName("");
-      setDescription("");
-      setPriceText("");
-      setDeposit("");
-      setContact("");
-      setTransferContract(false);
-      setRemainingContract("");
-      images.forEach((img) => URL.revokeObjectURL(img.preview));
-      setImages([]);
+      if (!createRes.data.success) {
+        toast.error("Failed to create room.");
+        return;
+      }
+
+      toast.success("Room uploaded successfully!");
+
+      // 5️⃣ Reset + redirect
+      setForm({
+        address: "",
+        rent: "",
+        deposit: "",
+        roomType: "",
+        bedrooms: "",
+        bathrooms: "",
+        amenities: [],
+        about: "",
+        transferContract: false,
+        remainingContract: "",
+        zalo: "",
+        facebook: "",
+        viber: "",
+        imageUrls: [],
+      });
+
+      navigate("/rooms");
     } catch (err) {
       console.error(err);
-      setErrors([err?.message || "Upload failed"]);
-    } finally {
-      setSubmitting(false);
+      toast.error("Server error. Please try again.");
     }
   };
 
+  const pageTransition = {
+    initial: { opacity: 0, x: 40 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -40 },
+    transition: { duration: 0.3 },
+  };
+
+  const amenitiesList = [
+    { name: "Parking", icon: <FaParking /> },
+    { name: "Swimming Pool", icon: <FaSwimmingPool /> },
+    { name: "Gym", icon: <FaDumbbell /> },
+    { name: "Pet Friendly", icon: <FaPaw /> },
+    { name: "Furnished", icon: <FaCouch /> },
+    { name: "Elevator", icon: <FaBuilding /> },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <div style={styles.wrap}>
-        <form onSubmit={handleSubmit} style={styles.form}>
-          {/* Room Photos */}
-          <label style={styles.label}>Room Photos</label>
-          <div style={styles.grid}>
-            {images.map((img, idx) => (
-              <div key={idx} style={styles.thumb}>
-                <img src={img.preview} alt={`room-${idx}`} style={styles.thumbImg} />
-                <button
-                  type="button"
-                  onClick={() => removeImageAt(idx)}
-                  style={styles.removeBtn}
-                  title="Remove"
-                >
-                  ×
-                </button>
-              </div>
+      <div className="flex-grow flex flex-col items-center py-12 px-4">
+        <div className="max-w-3xl w-full bg-white rounded-2xl shadow-md p-8">
+          <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+            Post Your Room
+          </h1>
+
+          <div className="flex justify-center gap-2 mb-6">
+            {[1, 2, 3].map((n) => (
+              <div
+                key={n}
+                className={`h-2 w-10 rounded-full ${
+                  step >= n ? "bg-blue-500" : "bg-gray-200"
+                }`}
+              ></div>
             ))}
-            {images.length < MAX_FILES && (
-              <button type="button" onClick={openFilePicker} style={styles.addTile}>
-                +
-              </button>
+          </div>
+
+          <motion.div key={step} {...pageTransition}>
+            {step === 1 && (
+              <div className="space-y-8">
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">Address</h2>
+                  <input
+                    type="text"
+                    className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter room address"
+                    value={form.address}
+                    onChange={(e) => handleChange("address", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">
+                    Room Details
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {["Studio", "Apartment", "Condo", "Basement"].map(
+                      (type) => (
+                        <button
+                          key={type}
+                          className={`border rounded-lg py-2 ${
+                            form.roomType === type
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-50 hover:bg-gray-100"
+                          }`}
+                          onClick={() => handleChange("roomType", type)}
+                        >
+                          {type}
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h2 className="font-medium text-gray-700 mb-2">Rent</h2>
+                    <input
+                      type="text"
+                      className="w-full border rounded-lg p-3"
+                      placeholder="Rent (USD)"
+                      value={form.rent}
+                      onChange={(e) => handleChange("rent", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <h2 className="font-medium text-gray-700 mb-2">Deposit</h2>
+                    <input
+                      type="text"
+                      className="w-full border rounded-lg p-3"
+                      placeholder="Deposit (USD)"
+                      value={form.deposit}
+                      onChange={(e) => handleChange("deposit", e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleNext}
+                    disabled={!validateStep1()}
+                    className={`px-6 py-2 rounded-lg ${
+                      validateStep1()
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPT.join(",")}
-            onChange={onFileInputChange}
-            style={{ display: "none" }}
-          />
 
-          {/* Description */}
-          <label style={styles.label}>Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            style={styles.textarea}
-            placeholder="About the room..."
-          />
+            {step === 2 && (
+              <div className="space-y-8">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h2 className="font-medium text-gray-700 mb-2">Bedrooms</h2>
+                    <select
+                      className="w-full border rounded-lg p-3"
+                      value={form.bedrooms}
+                      onChange={(e) => handleChange("bedrooms", e.target.value)}
+                    >
+                      <option value="">Select</option>
+                      {[1, 2, 3, 4].map((n) => (
+                        <option key={n}>{n}</option>
+                      ))}
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
 
-          {/* Rent and Deposit */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}>
-            <div>
-              <label style={styles.label}>Rent ( ₫ / month )</label>
-              <NumberInput
-                value={priceText}
-                onChange={setPriceText}
-                placeholder="5,200,000"
-              />
-            </div>
+                  <div>
+                    <h2 className="font-medium text-gray-700 mb-2">
+                      Bathrooms
+                    </h2>
+                    <select
+                      className="w-full border rounded-lg p-3"
+                      value={form.bathrooms}
+                      onChange={(e) =>
+                        handleChange("bathrooms", e.target.value)
+                      }
+                    >
+                      <option value="">Select</option>
+                      {[1, 2, 3, 4].map((n) => (
+                        <option key={n}>{n}</option>
+                      ))}
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
 
-            <div>
-              <label style={styles.label}>Deposit ( ₫ )</label>
-              <NumberInput
-                value={deposit}
-                onChange={setDeposit}
-                placeholder="5,200,000"
-              />
-            </div>
-          </div>
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">Amenities</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {amenitiesList.map((item) => (
+                      <button
+                        key={item.name}
+                        className={`flex items-center justify-center gap-2 border rounded-lg py-2 ${
+                          form.amenities.includes(item.name)
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-50 hover:bg-gray-100"
+                        }`}
+                        onClick={() => handleAmenityToggle(item.name)}
+                      >
+                        {item.icon}
+                        <span>{item.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-          {/* Address */}
-          <label style={styles.label}>Address</label>
-          <input
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            required
-            style={styles.input}
-            placeholder="Google Maps link or full address"
-          />
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">
+                    About the Area
+                  </h2>
+                  <textarea
+                    className="w-full border rounded-lg p-3 h-28"
+                    placeholder="Describe nearby area, accessibility, etc."
+                    value={form.about}
+                    onChange={(e) => handleChange("about", e.target.value)}
+                  />
+                </div>
 
-          <label style={styles.label}></label>
+                <div>
+                  <label className="flex items-center gap-3 text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={form.transferContract}
+                      onChange={(e) =>
+                        handleChange("transferContract", e.target.checked)
+                      }
+                    />
+                    Transfer contract available?
+                  </label>
+                  {form.transferContract && (
+                    <input
+                      type="text"
+                      className="w-full border rounded-lg p-3 mt-3"
+                      placeholder="Remaining contract period"
+                      value={form.remainingContract}
+                      onChange={(e) =>
+                        handleChange("remainingContract", e.target.value)
+                      }
+                    />
+                  )}
+                </div>
 
-          {/* Contact */}
-          <ContactField value={contact} onChange={setContact} />
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">
+                    Contact Info
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Zalo number"
+                      className="border rounded-lg p-3"
+                      value={form.zalo}
+                      onChange={(e) => handleChange("zalo", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Facebook link"
+                      className="border rounded-lg p-3"
+                      value={form.facebook}
+                      onChange={(e) => handleChange("facebook", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Viber number"
+                      className="border rounded-lg p-3"
+                      value={form.viber}
+                      onChange={(e) => handleChange("viber", e.target.value)}
+                    />
+                  </div>
+                </div>
 
-          {/* Transfer Contract */}
-          <label style={styles.label}>Transfer Contract?</label>
-          <select
-            value={transferContract ? "yes" : "no"}
-            onChange={(e) => setTransferContract(e.target.value === "yes")}
-            style={styles.input}
-          >
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
-          </select>
+                <div className="flex justify-between mt-6">
+                  <button
+                    onClick={handleBack}
+                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    disabled={!validateStep2()}
+                    className={`px-6 py-2 rounded-lg ${
+                      validateStep2()
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
 
-          {transferContract && (
-            <>
-              <label style={styles.label}>Remaining Contract</label>
-              <select
-                value={remainingContract}
-                onChange={(e) => setRemainingContract(e.target.value)}
-                style={styles.input}
-              >
-                <option value="">Select remaining contract</option>
-                <option value="1 month">1 month</option>
-                <option value="2 months">2 months</option>
-                <option value="3 months">3 months</option>
-                <option value="4 months">4 months</option>
-                <option value="5 months">5 months</option>
-                <option value="6 months">6 months</option>
-                <option value="other">Other</option>
-              </select>
+            {step === 3 && (
+              <div className="space-y-8">
+                <h2 className="font-medium text-gray-700 mb-2">
+                  Upload Images
+                </h2>
 
-              {remainingContract === "other" && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {/* Existing image previews */}
+                  {form.imageUrls.map((file, i) => (
+                    <div
+                      key={i}
+                      className="relative rounded-lg overflow-hidden border bg-gray-100 h-32"
+                    >
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt="Preview"
+                        className="object-cover w-full h-full"
+                      />
+                      <button
+                        type="button"
+                        className="absolute top-1 right-1 bg-black text-white rounded-full w-6 h-6"
+                        onClick={() =>
+                          handleChange(
+                            "imageUrls",
+                            form.imageUrls.filter((_, idx) => idx !== i)
+                          )
+                        }
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Add new image box */}
+                  {form.imageUrls.length < 12 && (
+                    <div
+                      onClick={() =>
+                        document.getElementById("imageUpload").click()
+                      }
+                      className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-32 cursor-pointer text-gray-400 text-4xl hover:border-blue-500 hover:text-blue-500"
+                    >
+                      +
+                    </div>
+                  )}
+                </div>
+
+                {/* Hidden file input */}
                 <input
-                  type="number"
-                  min={1}
-                  value={otherContractMonths || ""}
-                  onChange={(e) => setOtherContractMonths(e.target.value)}
-                  placeholder="Enter months"
-                  style={{ ...styles.input, marginTop: 8 }}
+                  id="imageUpload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) =>
+                    handleChange("imageUrls", [
+                      ...form.imageUrls,
+                      ...Array.from(e.target.files),
+                    ])
+                  }
+                  className="hidden"
                 />
-              )}
-            </>
-          )}
 
-          {errors.length > 0 && (
-            <div style={styles.errorBox}>
-              {errors.map((e, i) => (
-                <div key={i}>• {e}</div>
-              ))}
-            </div>
-          )}
-          {message && <div style={styles.success}>{message}</div>}
-
-          <button type="submit" style={styles.submit} disabled={submitting}>
-            {submitting ? "Uploading…" : "Submit"}
-          </button>
-        </form>
+                {/* Navigation Buttons */}
+                <div className="flex justify-between mt-6">
+                  <button
+                    onClick={handleBack}
+                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!validateAll()}
+                    className={`px-6 py-2 rounded-lg ${
+                      validateAll()
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    Upload Room
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+          {/* </div> */}
+        </div>
       </div>
     </div>
   );
-}
-
-const styles = {
-  wrap: { maxWidth: 760, margin: "32px auto", padding: "0 16px" },
-  form: {
-    background: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-  },
-  label: { display: "block", fontWeight: 600, margin: "12px 0 8px" },
-  input: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #ddd",
-    outline: "none",
-  },
-  textarea: {
-    width: "100%",
-    minHeight: 96,
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #ddd",
-    outline: "none",
-    resize: "vertical",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-    gap: 10,
-  },
-  thumb: {
-    position: "relative",
-    width: "100%",
-    paddingTop: "100%",
-    borderRadius: 10,
-    overflow: "hidden",
-    border: "1px solid #eee",
-    background: "#fafafa",
-  },
-  thumbImg: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" },
-  removeBtn: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 26,
-    height: 26,
-    borderRadius: "50%",
-    border: "none",
-    background: "#000",
-    color: "#fff",
-    cursor: "pointer",
-  },
-  addTile: {
-    width: 100,
-    height: 100,
-    border: "2px dashed #ccc",
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "2rem",
-    color: "#888",
-    cursor: "pointer",
-    background: "#f9f9f9",
-  },
-  errorBox: { background: "#ffe9e9", color: "#a40000", padding: "8px 10px", borderRadius: 8, marginTop: 10 },
-  success: { background: "#eaffea", color: "#126b12", padding: "8px 10px", borderRadius: 8, marginTop: 10 },
-  submit: {
-    marginTop: 14,
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 8,
-    border: "none",
-    background: "#2563eb",
-    color: "#fff",
-    fontWeight: 600,
-    cursor: "pointer",
-  },
 };
+
+export default UploadRoom;

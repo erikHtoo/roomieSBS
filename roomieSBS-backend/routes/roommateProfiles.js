@@ -1,10 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const supabase = require("../supabaseClient");
-const authmiddleWare = require("../middleware/authMiddleware");
+const authMiddleware = require("../middleware/authMiddleware");
 
-// GET current profile (check if user already has one)
-router.get("/", authmiddleWare.verifyAuth, async (req, res) => {
+// ============================
+// GET current user's profile
+// ============================
+router.get("/", authMiddleware.verifyAuth, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("roommates_table")
@@ -12,7 +14,7 @@ router.get("/", authmiddleWare.verifyAuth, async (req, res) => {
       .eq("id", req.user.id)
       .single();
 
-    if (error && error.code !== "PGRST116") throw error; // not found error code
+    if (error && error.code !== "PGRST116") throw error;
     res.json({ profile: data || null });
   } catch (err) {
     console.error("Error fetching profile:", err);
@@ -20,12 +22,15 @@ router.get("/", authmiddleWare.verifyAuth, async (req, res) => {
   }
 });
 
-// GET all profiles (for home page)
+// ============================
+// GET all profiles (for explore page)
+// ============================
 router.get("/all", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("roommates_table")
-      .select("*");
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
     res.json({ profiles: data });
@@ -35,7 +40,9 @@ router.get("/all", async (req, res) => {
   }
 });
 
-// GET profile by id (for roommate page)
+// ============================
+// GET profile by ID (view another roommate)
+// ============================
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -55,8 +62,10 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// POST (create new profile)
-router.post("/", authmiddleWare.verifyAuth, async (req, res) => {
+// ============================
+// POST (Create new profile)
+// ============================
+router.post("/", authMiddleware.verifyAuth, async (req, res) => {
   try {
     const {
       person_image_urls,
@@ -66,6 +75,8 @@ router.post("/", authmiddleWare.verifyAuth, async (req, res) => {
       person_preferred_location,
       person_about,
       person_contact,
+      person_friends,
+      person_traits,
     } = req.body;
 
     const { data, error } = await supabase
@@ -79,7 +90,15 @@ router.post("/", authmiddleWare.verifyAuth, async (req, res) => {
           person_budget,
           person_preferred_location,
           person_about,
-          person_contact,
+          person_contact:
+            typeof person_contact === "object"
+              ? JSON.stringify(person_contact)
+              : person_contact,
+          person_friends: person_friends
+            ? JSON.stringify(person_friends)
+            : null,
+          person_traits: person_traits ? JSON.stringify(person_traits) : null,
+          person_active: true,
         },
       ])
       .select();
@@ -93,8 +112,10 @@ router.post("/", authmiddleWare.verifyAuth, async (req, res) => {
   }
 });
 
-// PUT (update profile)
-router.put("/", authmiddleWare.verifyAuth, async (req, res) => {
+// ============================
+// PUT (Update profile)
+// ============================
+router.put("/", authMiddleware.verifyAuth, async (req, res) => {
   try {
     const {
       person_image_urls,
@@ -104,6 +125,9 @@ router.put("/", authmiddleWare.verifyAuth, async (req, res) => {
       person_preferred_location,
       person_about,
       person_contact,
+      person_friends,
+      person_traits,
+      person_active,
     } = req.body;
 
     const { data, error } = await supabase
@@ -115,22 +139,29 @@ router.put("/", authmiddleWare.verifyAuth, async (req, res) => {
         person_budget,
         person_preferred_location,
         person_about,
-        person_contact,
+        person_contact:
+          typeof person_contact === "object"
+            ? JSON.stringify(person_contact)
+            : person_contact,
+        person_friends: person_friends ? JSON.stringify(person_friends) : null,
+        person_traits: person_traits ? JSON.stringify(person_traits) : null,
+        person_active: person_active !== undefined ? person_active : true,
       })
       .eq("id", req.user.id)
       .select();
 
     if (error) throw error;
-
-    res.json({ profile: data[0] });
+    res.json({ success: true, profile: data[0] });
   } catch (err) {
     console.error("Error updating profile:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// DELETE (remove profile)
-router.delete("/:id", authmiddleWare.verifyAuth, async (req, res) => {
+// ============================
+// DELETE (Remove profile)
+// ============================
+router.delete("/", authMiddleware.verifyAuth, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("roommates_table")

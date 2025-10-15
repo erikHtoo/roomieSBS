@@ -1,84 +1,67 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import Navbar from "../components/navbar";
 import axios from "axios";
-import { supabase } from "../supabaseClient.js";
-import { useAuth } from "../auth/useAuth.js";
-import Navbar from "../components/navbar.jsx";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
+import {
+  FaPaw,
+  FaGamepad,
+  FaBriefcase,
+  FaLaptopCode,
+  FaGlassCheers,
+  FaSmokingBan,
+  FaHourglassHalf,
+  FaInfinity,
+} from "react-icons/fa";
 
-const MAX_FILES = 5;
-const MAX_MB = 5; // profile photos
-const ACCEPT = ["image/png", "image/jpeg", "image/webp"];
+const UploadRoommateProfile = () => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    name: "",
+    age: "",
+    budget: "",
+    gender: "",
+    withFriends: "alone",
+    friends: [{ name: "", age: "" }],
+    preferredLocation: "",
+    about: "",
+    traits: [],
+    zalo: "",
+    facebook: "",
+    viber: "",
+    imageUrls: [],
+  });
 
-export default function UploadRoommateProfile() {
-  const fileInputRef = useRef(null);
+  const handleChange = (key, value) => setForm({ ...form, [key]: value });
 
-  // Form fields
-  const [name, setName] = useState("");
-  const [gender, setGender] = useState("true");
-  const [budget, setBudget] = useState("");
-  const [preferredLocation, setPreferredLocation] = useState("");
-  const [about, setAbout] = useState("");
-  const [contact, setContact] = useState("");
-
-  // Images state
-  const [images, setImages] = useState([]);
-
-  // UX
-  const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState([]);
-  const [message, setMessage] = useState("");
-
-  // Auth (owner_id = user.id)
-  const { user, session } = useAuth?.() || { user: null, session: null };
-  const ownerId = useMemo(() => user?.id, [user]);
-
-  // Clean up object URLs
-  useEffect(() => {
-    return () => {
-      images.forEach((img) => URL.revokeObjectURL(img.preview));
-    };
-  }, [images]);
-
-  // Helpers
-  const openFilePicker = () => fileInputRef.current?.click();
-
-  const validateFile = (file) => {
-    const problems = [];
-    if (!ACCEPT.includes(file.type)) problems.push("Only PNG/JPG/WebP allowed.");
-    if (file.size > MAX_MB * 1024 * 1024) problems.push(`Max ${MAX_MB}MB per file.`);
-    return problems;
+  const handleFriendChange = (index, field, value) => {
+    const updatedFriends = [...form.friends];
+    updatedFriends[index][field] = value;
+    setForm({ ...form, friends: updatedFriends });
   };
 
-  const addFiles = (fileList) => {
-    const next = [...images];
-    const newErrors = [];
-    for (const file of fileList) {
-      if (next.length >= MAX_FILES) {
-        newErrors.push(`Max ${MAX_FILES} images.`);
-        break;
-      }
-      const probs = validateFile(file);
-      if (probs.length) {
-        newErrors.push(`${file.name}: ${probs.join(" ")}`);
-        continue;
-      }
-      next.push({ file, preview: URL.createObjectURL(file) });
-    }
-    setImages(next);
-    if (newErrors.length) setErrors(newErrors);
-  };
+  const addFriend = () =>
+    setForm({
+      ...form,
+      friends: [...form.friends, { name: "", age: "" }],
+    });
 
-  const onFileInputChange = (e) => {
-    if (e.target.files?.length) {
-      addFiles(e.target.files);
-      e.target.value = "";
-    }
-  };
+  const removeFriend = (index) =>
+    setForm({
+      ...form,
+      friends: form.friends.filter((_, i) => i !== index),
+    });
 
-  const removeImageAt = (idx) => {
-    const next = [...images];
-    const [removed] = next.splice(idx, 1);
-    if (removed?.preview) URL.revokeObjectURL(removed.preview);
-    setImages(next);
+  const handleTraitToggle = (trait) => {
+    setForm((prev) => {
+      const traits = prev.traits.includes(trait)
+        ? prev.traits.filter((t) => t !== trait)
+        : [...prev.traits, trait];
+      return { ...prev, traits };
+    });
   };
 
   const slugify = (s) =>
@@ -87,277 +70,466 @@ export default function UploadRoommateProfile() {
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-_.]/g, "");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrors([]);
-    setMessage("");
-    setSubmitting(true);
+  // Validation
+  const validateStep1 = () => {
+    const requiredFields = [
+      "name",
+      "age",
+      "budget",
+      "gender",
+      "preferredLocation",
+    ];
+    const baseValid = requiredFields.every(
+      (field) => form[field]?.trim() !== ""
+    );
+    if (form.withFriends === "friends") {
+      return (
+        baseValid &&
+        form.friends.length > 0 &&
+        form.friends.every((f) => f.name.trim() && f.age.trim())
+      );
+    }
+    return baseValid;
+  };
 
+  const validateStep2 = () => form.about.trim() !== "";
+
+  const validateAll = () => form.imageUrls.length > 0;
+
+  const handleNext = () => setStep((s) => Math.min(s + 1, 3));
+  const handleBack = () => setStep((s) => Math.max(s - 1, 1));
+
+  const handleSubmit = async () => {
     try {
-      const image_urls = [];
+      const {
+        name,
+        budget,
+        gender,
+        withFriends,
+        friends,
+        preferredLocation,
+        about,
+        traits,
+        zalo,
+        facebook,
+        viber,
+        imageUrls,
+      } = form;
 
-      for (let i = 0; i < images.length; i++) {
-        const f = images[i].file;
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      const userId = data?.session?.user?.id;
 
-        // Path convention: <ownerId>/<timestamp>-<index>-<sluggedName>
-        const path = `${ownerId}/${Date.now()}-${i}-${slugify(f.name)}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("roommate-images")
-          .upload(path, f, {
-            cacheControl: "3600",
-            upsert: false,
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: pub } = supabase.storage.from("roommate-images").getPublicUrl(path);
-        if (!pub?.publicUrl) throw new Error("Failed to get public URL");
-        image_urls.push(pub.publicUrl);
+      if (!token || !userId) {
+        toast.error("You must be logged in to create a roommate profile.");
+        return;
       }
 
-      // insert to backend
-      await axios.post(
-        "http://localhost:5000/roommates",
-        {
-          id: ownerId,
-          person_image_urls: image_urls,
-          person_name: name,
-          person_gender: gender === "true",
-          person_budget: budget,
-          person_preferred_location: preferredLocation,
-          person_about: about,
-          person_contact: contact,
-        },
-        {
-          headers: session?.access_token
-            ? { Authorization: `Bearer ${session.access_token}` }
-            : undefined,
-          timeout: 20000,
-        }
-      );
+      const createdAt = new Date().toISOString();
+      const uploadedUrls = [];
 
-      setMessage("Profile uploaded successfully!");
-      setName("");
-      setGender("true");
-      setBudget("");
-      setPreferredLocation("");
-      setAbout("");
-      setContact("");
-      images.forEach((img) => URL.revokeObjectURL(img.preview));
-      setImages([]);
+      for (let i = 0; i < imageUrls.length; i++) {
+        const file = imageUrls[i];
+        const filePath = `${userId}/${createdAt}-${i}-${slugify(file.name)}`;
+        const { error: uploadError } = await supabase.storage
+          .from("roommate-images")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error("Upload failed:", uploadError);
+          toast.error(`Failed to upload ${file.name}`);
+          continue;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from("roommate-images")
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrlData.publicUrl);
+      }
+
+      const payload = {
+        person_image_urls: uploadedUrls,
+        person_name: name,
+        person_gender: gender === "male",
+        person_budget: budget,
+        person_preferred_location: preferredLocation,
+        person_about: about,
+        person_contact: { zalo, facebook, viber },
+        person_friends: withFriends === "friends" ? friends : null,
+        person_traits: traits.length > 0 ? traits : null,
+      };
+
+      const res = await axios.post("http://localhost:5000/roommates", payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.data.success) {
+        toast.error("Failed to upload roommate profile.");
+        return;
+      }
+
+      toast.success("Roommate profile created!");
+      navigate("/");
     } catch (err) {
       console.error(err);
-      setErrors([err?.message || "Upload failed"]);
-    } finally {
-      setSubmitting(false);
+      toast.error("Server error. Please try again.");
     }
   };
 
+  const traitIcons = [
+    { name: "Pet Friendly", icon: <FaPaw /> },
+    { name: "Gamer", icon: <FaGamepad /> },
+    { name: "Business Major", icon: <FaBriefcase /> },
+    { name: "Data Science Major", icon: <FaLaptopCode /> },
+    { name: "Hospitality Major", icon: <FaGlassCheers /> },
+    { name: "Non Smoker", icon: <FaSmokingBan /> },
+    { name: "Short Term", icon: <FaHourglassHalf /> },
+    { name: "Long Term", icon: <FaInfinity /> },
+  ];
+
+  const pageTransition = {
+    initial: { opacity: 0, x: 40 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -40 },
+    transition: { duration: 0.3 },
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <div style={styles.wrap}>
-        <form onSubmit={handleSubmit} style={styles.form}>
-        
-          <label style={styles.label}>Profile Picture (Optional)</label>
-          <div style={styles.grid}>
-            {images.map((img, idx) => (
-              <div key={idx} style={styles.thumb}>
-                <img src={img.preview} alt={`profile-${idx}`} style={styles.thumbImg} />
-                <button
-                  type="button"
-                  onClick={() => removeImageAt(idx)}
-                  style={styles.removeBtn}
-                >
-                  ×
-                </button>
-              </div>
+      <div className="flex-grow flex flex-col items-center py-12 px-4">
+        <div className="max-w-3xl w-full bg-white rounded-2xl shadow-md p-8">
+          <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+            Create Roommate Profile
+          </h1>
+
+          <div className="flex justify-center gap-2 mb-6">
+            {[1, 2, 3].map((n) => (
+              <div
+                key={n}
+                className={`h-2 w-10 rounded-full ${
+                  step >= n ? "bg-blue-500" : "bg-gray-200"
+                }`}
+              ></div>
             ))}
-            {images.length < MAX_FILES && (
-              <button type="button" onClick={openFilePicker} style={styles.addTile}>
-                +
-              </button>
-            )}
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPT.join(",")}
-            onChange={onFileInputChange}
-            style={{ display: "none" }}
-          />
 
-          <label style={styles.label}>Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            style={styles.input}
-            placeholder="Full Name"
-          />
+          <motion.div key={step} {...pageTransition}>
+            {/* STEP 1 */}
+            {step === 1 && (
+              <div className="space-y-8">
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">Name</h2>
+                  <input
+                    type="text"
+                    className="w-full border rounded-lg p-3"
+                    placeholder="Enter your name"
+                    value={form.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                  />
+                </div>
 
-          <label style={styles.label}>Gender</label>
-          <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            style={styles.input}
-          >
-            <option value="true">Male</option>
-            <option value="false">Female</option>
-          </select>
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">Budget</h2>
+                  <input
+                    type="number"
+                    className="w-full border rounded-lg p-3"
+                    placeholder="Budget (USD)"
+                    value={form.budget}
+                    onChange={(e) => handleChange("budget", e.target.value)}
+                  />
+                </div>
 
-          <label style={styles.label}>Budget</label>
-          <input
-            type="number"
-            value={budget}
-            onChange={(e) => setBudget(e.target.value)}
-            required
-            style={styles.input}
-            placeholder="Max Budget Per Month (e.g. 5,000,000)"
-          />
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">Gender</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {["male", "female"].map((g) => (
+                      <button
+                        key={g}
+                        className={`border rounded-lg py-2 ${
+                          form.gender === g
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-50 hover:bg-gray-100"
+                        }`}
+                        onClick={() => handleChange("gender", g)}
+                      >
+                        {g === "male" ? "Male" : "Female"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-          <label style={styles.label}>Preferred Location</label>
-          <input
-            type="text"
-            value={preferredLocation}
-            onChange={(e) => setPreferredLocation(e.target.value)}
-            required
-            style={styles.input}
-            placeholder="near SBS, near Crescent Mall, etc."
-          />
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">
+                    Living Preference
+                  </h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {["alone", "friends"].map((opt) => (
+                      <button
+                        key={opt}
+                        className={`border rounded-lg py-2 ${
+                          form.withFriends === opt
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-50 hover:bg-gray-100"
+                        }`}
+                        onClick={() => handleChange("withFriends", opt)}
+                      >
+                        {opt === "alone" ? "Alone" : "With Friends"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-          <label style={styles.label}>About Yourself</label>
-          <textarea
-            value={about}
-            onChange={(e) => setAbout(e.target.value)}
-            required
-            style={styles.textarea}
-            placeholder="Tell others about you, your lifestyle, expectations..."
-          />
+                {form.withFriends === "friends" && (
+                  <div className="space-y-4 mt-4">
+                    {form.friends.map((f, i) => (
+                      <div key={i} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="font-medium text-gray-700">
+                            Friend {i + 1}
+                          </h3>
+                          {i > 0 && (
+                            <button
+                              className="text-red-500 text-sm"
+                              onClick={() => removeFriend(i)}
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          className="w-full border rounded-lg p-3 mb-3"
+                          placeholder="Name"
+                          value={f.name}
+                          onChange={(e) =>
+                            handleFriendChange(i, "name", e.target.value)
+                          }
+                        />
+                        <input
+                          type="number"
+                          className="w-full border rounded-lg p-3"
+                          placeholder="Gender"
+                          value={f.gender}
+                          onChange={(e) =>
+                            handleFriendChange(i, "gender", e.target.value)
+                          }
+                        />
+                      </div>
+                    ))}
+                    <button
+                      onClick={addFriend}
+                      className="text-blue-500 text-sm font-medium"
+                    >
+                      + Add another friend
+                    </button>
+                  </div>
+                )}
 
-          <label style={styles.label}>Contact</label>
-          <textarea
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            required
-            style={styles.textarea}
-            placeholder="zalo, facebook, email, etc..."
-          />
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">
+                    Preferred Location
+                  </h2>
+                  <input
+                    type="text"
+                    className="w-full border rounded-lg p-3"
+                    placeholder="e.g., District 7, Saigon"
+                    value={form.preferredLocation}
+                    onChange={(e) =>
+                      handleChange("preferredLocation", e.target.value)
+                    }
+                  />
+                </div>
 
-          {errors.length > 0 && (
-            <div style={styles.errorBox}>
-              {errors.map((e, i) => (
-                <div key={i}>• {e}</div>
-              ))}
-            </div>
-          )}
-          {message && <div style={styles.success}>{message}</div>}
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleNext}
+                    disabled={!validateStep1()}
+                    className={`px-6 py-2 rounded-lg ${
+                      validateStep1()
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
 
-          <button type="submit" style={styles.submit} disabled={submitting}>
-            {submitting ? "Posting..." : "Post"}
-          </button>
-        </form>
+            {/* STEP 2 */}
+            {step === 2 && (
+              <div className="space-y-8">
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">Traits</h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {traitIcons.map((item) => (
+                      <button
+                        key={item.name}
+                        className={`flex items-center justify-center gap-2 border rounded-lg py-2 ${
+                          form.traits.includes(item.name)
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-50 hover:bg-gray-100"
+                        }`}
+                        onClick={() => handleTraitToggle(item.name)}
+                      >
+                        {item.icon}
+                        <span>{item.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">About You</h2>
+                  <textarea
+                    className="w-full border rounded-lg p-3 h-28"
+                    placeholder="Describe yourself, lifestyle, habits, etc."
+                    value={form.about}
+                    onChange={(e) => handleChange("about", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <h2 className="font-medium text-gray-700 mb-2">
+                    Contact Info
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Zalo number"
+                      className="border rounded-lg p-3"
+                      value={form.zalo}
+                      onChange={(e) => handleChange("zalo", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Facebook link"
+                      className="border rounded-lg p-3"
+                      value={form.facebook}
+                      onChange={(e) => handleChange("facebook", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Viber number"
+                      className="border rounded-lg p-3"
+                      value={form.viber}
+                      onChange={(e) => handleChange("viber", e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-between">
+                  <button
+                    onClick={handleBack}
+                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    disabled={!validateStep2()}
+                    className={`px-6 py-2 rounded-lg ${
+                      validateStep2()
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3 */}
+            {step === 3 && (
+              <div className="space-y-8">
+                <h2 className="font-medium text-gray-700 mb-2">
+                  Upload Images
+                </h2>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {form.imageUrls.map((file, i) => (
+                    <div
+                      key={i}
+                      className="relative rounded-lg overflow-hidden border bg-gray-100 h-32"
+                    >
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt="Preview"
+                        className="object-cover w-full h-full"
+                      />
+                      <button
+                        type="button"
+                        className="absolute top-1 right-1 bg-black text-white rounded-full w-6 h-6"
+                        onClick={() =>
+                          handleChange(
+                            "imageUrls",
+                            form.imageUrls.filter((_, idx) => idx !== i)
+                          )
+                        }
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+
+                  {form.imageUrls.length < 12 && (
+                    <div
+                      onClick={() =>
+                        document.getElementById("imageUpload").click()
+                      }
+                      className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-32 cursor-pointer text-gray-400 text-4xl hover:border-blue-500 hover:text-blue-500"
+                    >
+                      +
+                    </div>
+                  )}
+                </div>
+
+                <input
+                  id="imageUpload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) =>
+                    handleChange("imageUrls", [
+                      ...form.imageUrls,
+                      ...Array.from(e.target.files),
+                    ])
+                  }
+                  className="hidden"
+                />
+
+                <div className="flex justify-between">
+                  <button
+                    onClick={handleBack}
+                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!validateAll()}
+                    className={`px-6 py-2 rounded-lg ${
+                      validateAll()
+                        ? "bg-blue-500 text-white hover:bg-blue-600"
+                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
+                  >
+                    Upload Profile
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </div>
       </div>
     </div>
   );
-}
-
-const styles = {
-  wrap: { maxWidth: 760, margin: "32px auto", padding: "0 16px" },
-  form: {
-    background: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-  },
-  label: { display: "block", fontWeight: 600, margin: "12px 0 8px" },
-  input: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #ddd",
-    outline: "none",
-  },
-  textarea: {
-    width: "100%",
-    minHeight: 96,
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid #ddd",
-    outline: "none",
-    resize: "vertical",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-    gap: 10,
-  },
-  thumb: {
-    position: "relative",
-    width: "100%",
-    paddingTop: "100%",
-    borderRadius: 10,
-    overflow: "hidden",
-    border: "1px solid #eee",
-    background: "#fafafa",
-  },
-  thumbImg: {
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  removeBtn: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 26,
-    height: 26,
-    borderRadius: "50%",
-    border: "none",
-    background: "#000",
-    color: "#fff",
-    cursor: "pointer",
-  },
-  addTile: {
-    width: 100,
-    height: 100,
-    border: "2px dashed #ccc",
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "2rem",
-    color: "#888",
-    cursor: "pointer",
-    background: "#f9f9f9",
-  },
-  errorBox: {
-    background: "#ffe9e9",
-    color: "#a40000",
-    padding: "8px 10px",
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  success: {
-    background: "#eaffea",
-    color: "#126b12",
-    padding: "8px 10px",
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  submit: {
-    marginTop: 14,
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 8,
-    border: "none",
-    background: "#2563eb",
-    color: "#fff",
-    fontWeight: 600,
-    cursor: "pointer",
-  },
 };
+
+export default UploadRoommateProfile;

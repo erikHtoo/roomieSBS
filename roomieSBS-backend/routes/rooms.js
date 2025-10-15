@@ -7,22 +7,22 @@ const authMiddleware = require("../middleware/authMiddleware.js");
 // CREATE (UploadRoom)
 // ============================
 router.post("/", authMiddleware.verifyAuth, async (req, res) => {
-  console.log("Received data:", req.body);
-
   try {
     const {
-      room_name,
       description,
-      price,
+      rent,
       deposit,
       image_urls, // array of URLs
       address,
-      contact, // JSON string or object { facebook, zalo, viber }
+      contact, // object { facebook, zalo, viber }
       transfer_contract, // boolean
       remaining_contract, // number / null
+      category,
+      bedrooms,
+      bathrooms,
+      amenities, // array or object
     } = req.body;
 
-    // Ensure remaining_contract is only set if transfer_contract is true
     const remaining_contract_value =
       transfer_contract === true || transfer_contract === "true"
         ? remaining_contract || null
@@ -32,20 +32,29 @@ router.post("/", authMiddleware.verifyAuth, async (req, res) => {
       .from("listings_table")
       .insert([
         {
-          room_name,
           description,
-          price,
-          price_num: price ? parseInt(price.toString().replace(/,/g, ""), 10) : null,
+          rent,
           deposit,
-          image_urls,
+          image_urls: image_urls
+            ? Array.isArray(image_urls)
+              ? JSON.stringify(image_urls)
+              : image_urls
+            : JSON.stringify([]),
           address,
-          contact: typeof contact === "object" ? JSON.stringify(contact) : contact,
+          contact:
+            typeof contact === "object" ? JSON.stringify(contact) : contact,
           owner_id: req.user.id,
           transfer_contract,
           remaining_contract: remaining_contract_value,
+          category,
+          bedrooms,
+          bathrooms,
+          amenities: Array.isArray(amenities)
+            ? JSON.stringify(amenities)
+            : amenities,
         },
       ])
-      .select();
+      .select("room_id, description, rent, deposit, address, category");
 
     if (error) throw error;
     res.status(201).json({ success: true, room: data[0] });
@@ -56,7 +65,7 @@ router.post("/", authMiddleware.verifyAuth, async (req, res) => {
 });
 
 // ============================
-// READ room for room page
+// READ (single room page)
 // ============================
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
@@ -70,11 +79,12 @@ router.get("/:id", async (req, res) => {
     if (error) throw error;
     if (!data) return res.status(404).json({ error: "Listing not found" });
 
-    // Parse contact JSON string before sending to frontend
     let parsedContact = data.contact;
     try {
       parsedContact =
-        typeof data.contact === "string" ? JSON.parse(data.contact) : data.contact;
+        typeof data.contact === "string"
+          ? JSON.parse(data.contact)
+          : data.contact;
     } catch {
       parsedContact = {};
     }
@@ -87,7 +97,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // ============================
-// get all room (listing page)
+// READ ALL (listing page)
 // ============================
 router.get("/", async (req, res) => {
   try {
@@ -105,7 +115,7 @@ router.get("/", async (req, res) => {
 });
 
 // ============================
-// GET room for editing (only owner)
+// READ for editing (only owner)
 // ============================
 router.get("/edit/:id", authMiddleware.verifyAuth, async (req, res) => {
   const { id } = req.params;
@@ -116,15 +126,17 @@ router.get("/edit/:id", authMiddleware.verifyAuth, async (req, res) => {
       .eq("room_id", id)
       .eq("owner_id", req.user.id)
       .single();
-    console.log("Fetched room for edit:", data);
-    if (error) throw error;
-    if (!data) return res.status(404).json({ error: "Not found or not your listing" });
 
-    // Parse contact JSON safely
+    if (error) throw error;
+    if (!data)
+      return res.status(404).json({ error: "Not found or not your listing" });
+
     let parsedContact = data.contact;
     try {
       parsedContact =
-        typeof data.contact === "string" ? JSON.parse(data.contact) : data.contact;
+        typeof data.contact === "string"
+          ? JSON.parse(data.contact)
+          : data.contact;
     } catch {
       parsedContact = {};
     }
@@ -143,15 +155,18 @@ router.put("/:id", authMiddleware.verifyAuth, async (req, res) => {
   const { id } = req.params;
   try {
     const {
-      room_name,
       description,
-      price,
+      rent,
       deposit,
       image_urls,
       address,
       contact,
       transfer_contract,
       remaining_contract,
+      category,
+      bedrooms,
+      bathrooms,
+      amenities,
     } = req.body;
 
     const remaining_contract_value =
@@ -162,15 +177,23 @@ router.put("/:id", authMiddleware.verifyAuth, async (req, res) => {
     const { data, error } = await supabase
       .from("listings_table")
       .update({
-        room_name,
         description,
-        price,
+        rent,
         deposit,
-        image_urls,
+        image_urls: Array.isArray(image_urls)
+          ? JSON.stringify(image_urls)
+          : image_urls,
         address,
-        contact: typeof contact === "object" ? JSON.stringify(contact) : contact,
+        contact:
+          typeof contact === "object" ? JSON.stringify(contact) : contact,
         transfer_contract,
         remaining_contract: remaining_contract_value,
+        category,
+        bedrooms,
+        bathrooms,
+        amenities: Array.isArray(amenities)
+          ? JSON.stringify(amenities)
+          : amenities,
       })
       .eq("room_id", id)
       .eq("owner_id", req.user.id)
@@ -178,12 +201,41 @@ router.put("/:id", authMiddleware.verifyAuth, async (req, res) => {
 
     if (error) throw error;
     if (!data || !data.length) {
-      return res.status(404).json({ success: false, error: "Not found or no permission" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Not found or no permission" });
     }
 
     res.json({ success: true, room: data[0] });
   } catch (err) {
     console.error("Error updating room:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================
+// UPDATE IMAGES ONLY
+// ============================
+router.put("/:id/images", authMiddleware.verifyAuth, async (req, res) => {
+  const { id } = req.params;
+  const { image_urls } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("listings_table")
+      .update({
+        image_urls: Array.isArray(image_urls)
+          ? JSON.stringify(image_urls)
+          : image_urls,
+      })
+      .eq("room_id", id)
+      .eq("owner_id", req.user.id)
+      .select("room_id, image_urls");
+
+    if (error) throw error;
+    res.json({ success: true, room: data[0] });
+  } catch (err) {
+    console.error("Error updating room images:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -204,7 +256,9 @@ router.delete("/:id", authMiddleware.verifyAuth, async (req, res) => {
 
     if (error) throw error;
     if (!data.length) {
-      return res.status(404).json({ success: false, error: "Not found or no permission" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Not found or no permission" });
     }
 
     res.json({ success: true, deleted: data[0] });
@@ -213,5 +267,4 @@ router.delete("/:id", authMiddleware.verifyAuth, async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
 module.exports = router;

@@ -5,7 +5,7 @@ export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <p>Loading...</p>; // or a spinner
+    return null;
   }
 
   if (!user) {

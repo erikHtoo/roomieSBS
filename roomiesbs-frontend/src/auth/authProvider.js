@@ -9,18 +9,23 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    const initAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       setUser(session?.user ?? null);
       setSession(session);
-      setLoading(false);
+      setLoading(false); // move this AFTER setting session/user
     };
-    getSession();
+
+    initAuth();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setUser(session?.user ?? null);
         setSession(session);
+        setLoading(false); // ensure loading stops after state change too
       }
     );
 
@@ -30,11 +35,12 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, signOut }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, session, signOut, loading }}>
+      {loading ? null : children}
     </AuthContext.Provider>
   );
 }

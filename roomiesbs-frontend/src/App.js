@@ -15,83 +15,118 @@ import HomePage from "./pages/HomePage.js";
 import RoomPage from "./pages/RoomPage.js";
 import ListingPage from "./pages/listingPage.js";
 import UploadRoommateProfile from "./pages/UploadRoommate.js";
-import RoommatePage from "./pages/roommatePage.js";
+import ProfilePage from "./pages/roommatePage.js";
 import EditRoommateProfile from "./pages/editRoommate.js";
+
+// utilities
+import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/login" element={<PublicRoute> <Login /></PublicRoute>} />
-          <Route path="/register" element={<PublicRoute> <Register /></PublicRoute>} />
+    <>
+      <Router>
+        <AuthProvider>
+          <Routes>
+            {/* Public Routes */}
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              }
+            />
 
-          <Route path="/" element={<HomePage />} />
-          <Route path="/rooms" element={<ListingPage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/rooms" element={<ListingPage />} />
 
-          {/* Protected Route */}
-          <Route
-            path="/upload"
-            element={
-              <ProtectedRoute>
-                <UploadRoom />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/edit/:id"
-            element={
-              <ProtectedRoute>
-                <EditRoom />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/create-profile"
-            element={
-              <ProtectedRoute>
-                <UploadRoommateProfile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/:id"
-            element={
-              <ProtectedRoute>
-                <RoommatePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/edit-profile"
-            element={
-              <ProtectedRoute>
-                <EditRoommateProfile />
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected Routes */}
+            <Route
+              path="/upload"
+              element={
+                <ProtectedRoute>
+                  <UploadRoom />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <EditRoom />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create-profile"
+              element={
+                <ProtectedRoute>
+                  <UploadRoommateProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/:id"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/edit-profile"
+              element={
+                <ProtectedRoute>
+                  <EditRoommateProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/room/:id"
+              element={
+                <ProtectedRoute>
+                  <RoomPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </AuthProvider>
+      </Router>
 
-
-          <Route 
-            path="/room/:id" 
-            element={
-              <ProtectedRoute>
-                <RoomPage />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </AuthProvider>
-    </Router>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: "#111", // dark, minimal
+            color: "#fff",
+            borderRadius: "12px",
+            fontSize: "0.95rem",
+          },
+          success: {
+            iconTheme: {
+              primary: "#4ade80",
+              secondary: "#111",
+            },
+          },
+        }}
+      />
+    </>
   );
 }
 

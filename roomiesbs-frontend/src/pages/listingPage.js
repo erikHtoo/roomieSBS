@@ -2,19 +2,34 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar.jsx";
-import { FiSearch, FiHome, FiUpload } from "react-icons/fi";
+import { FiHome, FiUpload } from "react-icons/fi";
 import { useIsMobile } from "../utils/isMobile.js";
+import {
+  FaParking,
+  FaSwimmingPool,
+  FaDumbbell,
+  FaPaw,
+  FaCouch,
+  FaBuilding,
+} from "react-icons/fa";
+
+const amenityIcons = {
+  Parking: <FaParking className="text-gray-700" />,
+  "Swimming Pool": <FaSwimmingPool className="text-blue-500" />,
+  Gym: <FaDumbbell className="text-red-500" />,
+  "Pet Friendly": <FaPaw className="text-amber-600" />,
+  Furnished: <FaCouch className="text-rose-500" />,
+  Elevator: <FaBuilding className="text-purple-500" />,
+};
 
 const parseImageUrls = (val) => {
   if (!val) return [];
   if (Array.isArray(val)) return val.filter(Boolean);
-
   if (typeof val === "string") {
     try {
       const parsed = JSON.parse(val);
       if (Array.isArray(parsed)) return parsed.filter(Boolean);
     } catch (e) {}
-
     if (val.startsWith("{") && val.endsWith("}")) {
       const inner = val.slice(1, -1);
       return inner
@@ -22,21 +37,23 @@ const parseImageUrls = (val) => {
         .map((s) => s.trim().replace(/^"|"$/g, ""))
         .filter(Boolean);
     }
-
-    return val.split(",").map((s) => s.trim()).filter(Boolean);
+    return val
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   return [];
 };
 
 export default function ListingPage() {
-  
-    const isMobile = useIsMobile();
+  const isMobile = useIsMobile();
 
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [budgetFilter, setBudgetFilter] = useState("");
+  const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [minRent, setMinRent] = useState("");
+  const [maxRent, setMaxRent] = useState("");
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -55,74 +72,71 @@ export default function ListingPage() {
     fetchRooms();
   }, []);
 
-  if (loading) return <div className="p-6">Loading rooms...</div>;
-  if (error) return <div className="p-6 text-red-500">{error}</div>;
-  if (rooms.length === 0) return <div className="p-6">No rooms available yet.</div>;
-
-  // === Filtering Logic ===
-  const filteredRooms = rooms.filter((room) => {
-    const price = Number(room.price) || 0;
-
-    // Search filter
-    const matchesSearch =
-      searchQuery === "" ||
-      room.room_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.description?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    // Budget filter
-    let matchesBudget = true;
-    if (budgetFilter === "below-3") matchesBudget = price < 3000000;
-    else if (budgetFilter === "3-5")
-      matchesBudget = price >= 3000000 && price <= 5000000;
-    else if (budgetFilter === "5-7")
-      matchesBudget = price > 5000000 && price <= 7000000;
-    else if (budgetFilter === "7-above") matchesBudget = price > 7000000;
-
-    return matchesSearch && matchesBudget;
-  });
-
   const placeholder =
     "data:image/svg+xml;utf8," +
     encodeURIComponent(
       `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%' height='100%' fill='%23e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23737474'>No Image</text></svg>`
     );
 
+  const SkeletonCard = () => (
+    <div className="bg-white rounded-2xl shadow-md overflow-hidden animate-pulse">
+      <div className="h-48 bg-gray-200"></div>
+      <div className="p-5 space-y-3">
+        <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        <div className="flex justify-between mt-4">
+          <div className="h-5 bg-gray-300 rounded w-1/3"></div>
+          <div className="h-5 bg-gray-300 rounded w-1/4"></div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // === Filter Logic ===
+  const filteredRooms = rooms.filter((room) => {
+    const price = Number(room.rent?.replace(/\D/g, "")) || 0;
+
+    if (minRent && price < Number(minRent)) return false;
+    if (maxRent && price > Number(maxRent)) return false;
+
+    const roomAmenities = Array.isArray(room.amenities)
+      ? room.amenities.map((a) => a.replace(/["\[\]]/g, "").trim())
+      : typeof room.amenities === "string"
+      ? room.amenities
+          .replace(/[\[\]"]/g, "")
+          .split(",")
+          .map((a) => a.trim())
+      : [];
+
+    const matchesAmenities =
+      selectedAmenities.length === 0 ||
+      selectedAmenities.every((a) => roomAmenities.includes(a));
+
+    return matchesAmenities;
+  });
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
-    {/* Hero Section */}
-{/* Hero Section */}
+      {/* Hero Section */}
       <section className="max-w-4xl mx-auto px-6 mt-10 mb-8 text-center space-y-3">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-700">
           Find your SBS Roommate
         </h1>
 
-        {/* Row of upload + look at rooms */}
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3 mt-4">
           <Link
             to="/"
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow hover:opacity-90 transition"
           >
             <FiHome size={18} />
             Find Roommates
-            <span className="ml-1">
-              {/* Navigation arrow */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </span>
           </Link>
 
           <Link
-            to="/create-profile"
+            to="/upload"
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
           >
             <FiUpload size={18} />
@@ -131,86 +145,177 @@ export default function ListingPage() {
         </div>
       </section>
 
-      {/* Filter Row */}
-      <div className="max-w-7xl mx-auto px-6 mb-8">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Search Bar + Icon */}
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Search profiles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-400"
-            />
-            <span
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition"
-            >
-              <FiSearch size={20} />
-            </span>
-          </div>
+      {/* Gradient Separator */}
+      <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-8" />
 
-          {/* Budget Filter */}
-          <select
-            value={budgetFilter}
-            onChange={(e) => setBudgetFilter(e.target.value)}
-            className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-400"
-          >
-            <option value="">All Budgets</option>
-            <option value="below-3">Below 3M</option>
-            <option value="3-5">3M - 5M</option>
-            <option value="5-7">5M - 7M</option>
-            <option value="7-above">7M+</option>
-          </select>
+      {/* Filter Controls (aligned left) */}
+      <div className="max-w-7xl mx-auto px-6 mb-6 flex items-center gap-4">
+        {/* Rent bubble */}
+        <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-5 py-2.5 rounded-xl border border-gray-200 shadow-sm h-[46px]">
+          <span className="text-gray-700 text-sm font-medium">Rent</span>
+          <input
+            type="number"
+            placeholder="Minimum"
+            value={minRent}
+            onChange={(e) => setMinRent(e.target.value)}
+            className="w-28 border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+          />
+          <span className="text-gray-500 text-sm">-</span>
+          <input
+            type="number"
+            placeholder="Maximum"
+            value={maxRent}
+            onChange={(e) => setMaxRent(e.target.value)}
+            className="w-28 border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+          />
+        </div>
+
+        {/* Filter dropdown bubble */}
+        <div className="relative">
+          <details className="group">
+            <summary className="flex items-center gap-2 cursor-pointer text-gray-700 text-sm font-medium bg-white/80 backdrop-blur-md border border-gray-200 rounded-xl px-5 py-2.5 shadow-sm hover:bg-white/90 transition h-[46px]">
+              <span>Filters</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-4 h-4 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </summary>
+
+            <div className="absolute mt-2 left-0 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-60 space-y-3 z-50">
+              <label className="text-xs text-gray-500">Amenities</label>
+              <div className="flex flex-col gap-2">
+                {Object.keys(amenityIcons).map((amenity) => (
+                  <label
+                    key={amenity}
+                    className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedAmenities.includes(amenity)}
+                      onChange={() =>
+                        setSelectedAmenities((prev) =>
+                          prev.includes(amenity)
+                            ? prev.filter((a) => a !== amenity)
+                            : [...prev, amenity]
+                        )
+                      }
+                      className="rounded border-gray-300 text-gray-700 focus:ring-gray-400"
+                    />
+                    {amenity}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </details>
         </div>
       </div>
 
-      {/* Rooms Grid */}
-      <main className="max-w-7xl mx-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredRooms.length > 0 ? (
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {loading &&
+          Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+
+        {!loading && error && (
+          <p className="col-span-full text-center text-red-500">{error}</p>
+        )}
+
+        {!loading &&
+          !error &&
+          filteredRooms.length > 0 &&
           filteredRooms.map((room) => {
             const imgs = parseImageUrls(room.image_urls);
-            const firstImage = imgs.length ? imgs[0] : null;
+            const firstImage = imgs.length ? imgs[0] : placeholder;
+            const amenities = Array.isArray(room.amenities)
+              ? room.amenities.map((a) => a.replace(/["\[\]]/g, "").trim())
+              : typeof room.amenities === "string"
+              ? room.amenities
+                  .replace(/[\[\]"]/g, "")
+                  .split(",")
+                  .map((a) => a.trim())
+                  .filter(Boolean)
+              : [];
 
             return (
               <Link
                 key={room.room_id}
                 to={`/room/${room.room_id}`}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition block"
+                className="group relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-300"
               >
-                {/* Image */}
-                <div className="h-48 w-full flex items-center justify-center bg-gray-200">
-                  {firstImage ? (
-                    <img
-                      src={firstImage}
-                      alt="Room"
-                      className="max-h-full max-w-full object-contain"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = placeholder;
-                      }}
-                    />
-                  ) : (
-                    <span className="text-gray-500">No Image</span>
-                  )}
+                {/* Image Section */}
+                <div className="relative h-56 w-full overflow-hidden">
+                  <img
+                    src={firstImage}
+                    alt="Room"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = placeholder;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent" />
+
+                  {/* Bottom bar */}
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                    <span className="px-3 py-1.5 bg-rose-500/90 text-white text-sm font-semibold rounded-full shadow-md">
+                      {room.rent ? `${room.rent} ₫` : "—"}
+                    </span>
+                    <div className="flex gap-1">
+                      {amenities.slice(0, 3).map((am, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-center w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-sm"
+                          title={am}
+                        >
+                          {amenityIcons[am] || (
+                            <span className="text-[10px] text-gray-600">
+                              {am[0] || "?"}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {amenities.length > 3 && (
+                        <span className="flex items-center justify-center w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full text-xs text-gray-600 shadow-sm">
+                          +{amenities.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Info */}
-                <div className="p-4">
-                  <h2 className="font-semibold text-lg truncate">
-                    {room.room_name || "No Name"}
-                  </h2>
-                  <p className="text-gray-600 text-sm mt-2 overflow-hidden text-ellipsis h-10">
-                    {room.description || "No description available."}
+                {/* Info Section */}
+                <div className="p-5 flex flex-col justify-between h-40">
+                  <p className="text-gray-600 text-sm line-clamp-3">
+                    {room.description || "No description provided."}
                   </p>
-                  <p className="text-blue-600 font-bold mt-3">
-                    {room.price ? `${room.price} VND` : "-"}
-                  </p>
+                  <div className="flex items-center justify-between text-sm mt-4 text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
+                      <span className="bg-gray-100 px-2 py-1 rounded-md">
+                        bedrooms - {room.bedrooms || "?"}
+                      </span>
+                      <span className="bg-gray-100 px-2 py-1 rounded-md">
+                        bathrooms - {room.bathrooms || "?"}
+                      </span>
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-600 font-medium text-xs">
+                      {room.category || "—"}
+                    </span>
+                  </div>
                 </div>
               </Link>
             );
-          })
-        ) : (
+          })}
+
+        {!loading && !error && filteredRooms.length === 0 && (
           <p className="col-span-full text-center text-gray-500">
             No rooms match your filters.
           </p>

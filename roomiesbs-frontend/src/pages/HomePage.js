@@ -24,14 +24,16 @@ const parseImageUrls = (val) => {
         .filter(Boolean);
     }
 
-    return val.split(",").map((s) => s.trim()).filter(Boolean);
+    return val
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   return [];
 };
 
 export default function HomePage() {
   const isMobile = useIsMobile();
-
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -40,7 +42,6 @@ export default function HomePage() {
   const { session } = useAuth();
   const [hasProfile, setHasProfile] = useState(false);
 
-  // Check if user has created a roommate profile
   useEffect(() => {
     if (!session?.access_token) return;
 
@@ -48,27 +49,20 @@ export default function HomePage() {
       .get("http://localhost:5000/roommates", {
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
-      .then((res) => {
-        setHasProfile(!!res.data?.profile);
-      })
+      .then((res) => setHasProfile(!!res.data?.profile))
       .catch(() => setHasProfile(false));
-  }, [session]);
+  }, []);
 
-  // Fetch roommate profiles
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
         const res = await axios.get("http://localhost:5000/roommates/all", {
           timeout: 20000,
         });
-
         let profiles = res.data.profiles || [];
-
-        // Remove the logged-in user's own profile
         if (session?.user?.id) {
           profiles = profiles.filter((p) => p.id !== session.user.id);
         }
-
         setProfiles(profiles);
       } catch (err) {
         console.error(err);
@@ -78,24 +72,15 @@ export default function HomePage() {
       }
     };
     fetchProfiles();
-  }, [session]);
+  }, []);
 
-  if (loading) return <div className="p-6">Loading profiles...</div>;
-  if (error) return <div className="p-6 text-red-500">{error}</div>;
-  if (profiles.length === 0)
-    return <div className="p-6">No roommate profiles available yet.</div>;
-
-  // === Filtering Logic ===
   const filteredProfiles = profiles.filter((profile) => {
     const budget = Number(profile.person_budget) || 0;
-
-    // Search filter
     const matchesSearch =
       searchQuery === "" ||
       profile.person_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       profile.person_about?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Budget filter
     let matchesBudget = true;
     if (budgetFilter === "below-3") matchesBudget = budget < 3000000;
     else if (budgetFilter === "3-5")
@@ -113,6 +98,18 @@ export default function HomePage() {
       `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%' height='100%' fill='%23e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23737474'>No Image</text></svg>`
     );
 
+  const SkeletonCard = () => (
+    <div className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse flex flex-col">
+      <div className="h-48 bg-gray-200"></div>
+      <div className="p-4 space-y-3">
+        <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-4 bg-gray-200 rounded w-full"></div>
+        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+        <div className="h-5 bg-gray-300 rounded w-1/2 mt-3"></div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
@@ -123,54 +120,44 @@ export default function HomePage() {
           Find your SBS Roommate
         </h1>
 
-        {/* Row of upload + look at rooms */}
         <div className="flex items-center justify-center gap-3">
-
-          {hasProfile ? (
-            <Link
-              to={`/edit-profile`}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
-            >
-              <FiUpload size={18} />
-              Edit Profile
-            </Link>
-          ) : (
-            <Link
-              to="/create-profile"
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
-            >
-              <FiUpload size={18} />
-              Upload Profile
-            </Link>
-          )}
-
           <Link
             to="/rooms"
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow hover:opacity-90 transition"
           >
             <FiHome size={18} />
-                Look at Rooms
-                <span className="ml-1">
-                  {/* Navigation arrow */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </span>
-              </Link>
+            Look at Rooms
+            <span className="ml-1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </span>
+          </Link>
+
+          <Link
+            to="/create-profile"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
+          >
+            <FiUpload size={18} />
+            Roommate Profile
+          </Link>
         </div>
       </section>
 
       {/* Filter Row */}
       <div className="max-w-7xl mx-auto px-6 mb-8">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Search Bar + Icon */}
           <div className="relative flex-1">
             <input
               type="text"
@@ -179,14 +166,11 @@ export default function HomePage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-rose-400"
             />
-            <span
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition"
-            >
+            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition">
               <FiSearch size={20} />
             </span>
           </div>
 
-          {/* Budget Filter */}
           <select
             value={budgetFilter}
             onChange={(e) => setBudgetFilter(e.target.value)}
@@ -203,7 +187,11 @@ export default function HomePage() {
 
       {/* Profiles Grid */}
       <main className="max-w-7xl mx-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProfiles.length > 0 ? (
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+        ) : error ? (
+          <p className="col-span-full text-center text-red-500">{error}</p>
+        ) : filteredProfiles.length > 0 ? (
           filteredProfiles.map((profile) => {
             const imgs = parseImageUrls(profile.person_image_urls);
             const firstImage = imgs.length ? imgs[0] : null;
@@ -214,7 +202,6 @@ export default function HomePage() {
                 to={`/profile/${profile.id}`}
                 className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition flex flex-col"
               >
-                {/* Image */}
                 <div className="h-48 w-full flex items-center justify-center bg-gray-200">
                   {firstImage ? (
                     <img
@@ -231,7 +218,6 @@ export default function HomePage() {
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="p-4 flex flex-col flex-grow">
                   <h2 className="font-semibold text-lg text-gray-800 mb-1">
                     {profile.person_name}{" "}
@@ -257,7 +243,7 @@ export default function HomePage() {
           })
         ) : (
           <p className="col-span-full text-center text-gray-500">
-            No profiles match your filters.
+            No roommate profiles available yet.
           </p>
         )}
       </main>
