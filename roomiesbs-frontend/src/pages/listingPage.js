@@ -101,7 +101,7 @@ export default function ListingPage() {
     if (maxRent && price > Number(maxRent)) return false;
 
     const roomAmenities = Array.isArray(room.amenities)
-      ? room.amenities.map((a) => a.replace(/["\[\]]/g, "").trim())
+      ? room.amenities.map((a) => a.replace(/["\]]/g, "").trim())
       : typeof room.amenities === "string"
       ? room.amenities
           .replace(/[\[\]"]/g, "")
@@ -123,7 +123,7 @@ export default function ListingPage() {
       {/* Hero Section */}
       <section className="max-w-4xl mx-auto px-6 mt-10 mb-8 text-center space-y-3">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-700">
-          Find your SBS Roommate
+          Find your Cozy Room
         </h1>
 
         <div className="flex items-center justify-center gap-3 mt-4">
@@ -236,7 +236,7 @@ export default function ListingPage() {
             const imgs = parseImageUrls(room.image_urls);
             const firstImage = imgs.length ? imgs[0] : placeholder;
             const amenities = Array.isArray(room.amenities)
-              ? room.amenities.map((a) => a.replace(/["\[\]]/g, "").trim())
+              ? room.amenities.map((a) => a.replace(/["\]]/g, "").trim())
               : typeof room.amenities === "string"
               ? room.amenities
                   .replace(/[\[\]"]/g, "")

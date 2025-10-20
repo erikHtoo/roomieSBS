@@ -25,7 +25,7 @@ const UploadRoommateProfile = () => {
     budget: "",
     gender: "",
     withFriends: "alone",
-    friends: [{ name: "", age: "" }],
+    friends: [{ name: "", gender: "" }],
     preferredLocation: "",
     about: "",
     traits: [],
@@ -70,15 +70,14 @@ const UploadRoommateProfile = () => {
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-_.]/g, "");
 
+  const formatBudget = (value) => {
+    const numeric = value.replace(/[^0-9]/g, "");
+    return numeric ? Number(numeric).toLocaleString("en-US") : "";
+  };
+
   // Validation
   const validateStep1 = () => {
-    const requiredFields = [
-      "name",
-      "age",
-      "budget",
-      "gender",
-      "preferredLocation",
-    ];
+    const requiredFields = ["name", "budget", "gender", "preferredLocation"];
     const baseValid = requiredFields.every(
       (field) => form[field]?.trim() !== ""
     );
@@ -86,13 +85,23 @@ const UploadRoommateProfile = () => {
       return (
         baseValid &&
         form.friends.length > 0 &&
-        form.friends.every((f) => f.name.trim() && f.age.trim())
+        form.friends.every((f) => f.name.trim() && f.gender.trim())
       );
     }
     return baseValid;
   };
 
   const validateStep2 = () => form.about.trim() !== "";
+
+  const validateFacebook = () => {
+    if (form.facebook && !/^https?:\/\/.+/i.test(form.facebook)) {
+      toast.error(
+        "Please enter a valid Facebook link (must start with http or https)."
+      );
+      return false;
+    }
+    return true;
+  };
 
   const validateAll = () => form.imageUrls.length > 0;
 
@@ -103,7 +112,6 @@ const UploadRoommateProfile = () => {
     try {
       const {
         name,
-        budget,
         gender,
         withFriends,
         friends,
@@ -148,16 +156,18 @@ const UploadRoommateProfile = () => {
         uploadedUrls.push(publicUrlData.publicUrl);
       }
 
+      const cleanBudget = form.budget.replace(/,/g, "");
+
       const payload = {
         person_image_urls: uploadedUrls,
         person_name: name,
         person_gender: gender === "male",
-        person_budget: budget,
+        person_budget: cleanBudget,
         person_preferred_location: preferredLocation,
         person_about: about,
         person_contact: { zalo, facebook, viber },
         person_friends: withFriends === "friends" ? friends : null,
-        person_traits: traits.length > 0 ? traits : null,
+        person_traits: traits && traits.length > 0 ? traits : null,
       };
 
       const res = await axios.post("http://localhost:5000/roommates", payload, {
@@ -236,11 +246,13 @@ const UploadRoommateProfile = () => {
                 <div>
                   <h2 className="font-medium text-gray-700 mb-2">Budget</h2>
                   <input
-                    type="number"
+                    type="text"
                     className="w-full border rounded-lg p-3"
-                    placeholder="Budget (USD)"
+                    placeholder="Budget (VND)"
                     value={form.budget}
-                    onChange={(e) => handleChange("budget", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("budget", formatBudget(e.target.value))
+                    }
                   />
                 </div>
 
@@ -265,7 +277,7 @@ const UploadRoommateProfile = () => {
 
                 <div>
                   <h2 className="font-medium text-gray-700 mb-2">
-                    Living Preference
+                    Moving Alone or With Friends?
                   </h2>
                   <div className="grid grid-cols-2 gap-3">
                     {["alone", "friends"].map((opt) => (
@@ -287,43 +299,64 @@ const UploadRoommateProfile = () => {
                 {form.withFriends === "friends" && (
                   <div className="space-y-4 mt-4">
                     {form.friends.map((f, i) => (
-                      <div key={i} className="border rounded-lg p-4 bg-gray-50">
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="font-medium text-gray-700">
+                      <div
+                        key={i}
+                        className="border border-gray-200 rounded-xl p-4 bg-gray-50 shadow-sm"
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="font-semibold text-gray-800">
                             Friend {i + 1}
                           </h3>
-                          {i > 0 && (
-                            <button
-                              className="text-red-500 text-sm"
-                              onClick={() => removeFriend(i)}
-                            >
-                              Remove
-                            </button>
-                          )}
+                          <button
+                            className="text-red-500 text-sm hover:underline"
+                            onClick={() => {
+                              if (i === 0) {
+                                setForm((prev) => ({
+                                  ...prev,
+                                  withFriends: "alone",
+                                  friends: [{ name: "", gender: "" }],
+                                }));
+                              } else {
+                                removeFriend(i);
+                              }
+                            }}
+                          >
+                            Remove
+                          </button>
                         </div>
+
                         <input
                           type="text"
-                          className="w-full border rounded-lg p-3 mb-3"
-                          placeholder="Name"
+                          className="w-full border border-gray-300 rounded-lg p-3 mb-3 focus:ring-2 focus:ring-blue-200"
+                          placeholder="Friend's name"
                           value={f.name}
                           onChange={(e) =>
                             handleFriendChange(i, "name", e.target.value)
                           }
                         />
-                        <input
-                          type="number"
-                          className="w-full border rounded-lg p-3"
-                          placeholder="Gender"
-                          value={f.gender}
-                          onChange={(e) =>
-                            handleFriendChange(i, "gender", e.target.value)
-                          }
-                        />
+
+                        <div className="grid grid-cols-2 gap-3">
+                          {["male", "female"].map((g) => (
+                            <button
+                              key={g}
+                              className={`border rounded-lg py-2 w-full transition ${
+                                f.gender === g
+                                  ? "bg-blue-100 border-blue-400 text-blue-800"
+                                  : "bg-white hover:bg-gray-100 text-gray-700"
+                              }`}
+                              onClick={() => handleFriendChange(i, "gender", g)}
+                              type="button"
+                            >
+                              {g === "male" ? "Male" : "Female"}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     ))}
+
                     <button
                       onClick={addFriend}
-                      className="text-blue-500 text-sm font-medium"
+                      className="text-blue-600 text-sm font-medium hover:underline"
                     >
                       + Add another friend
                     </button>
@@ -401,10 +434,15 @@ const UploadRoommateProfile = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <input
                       type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       placeholder="Zalo number"
                       className="border rounded-lg p-3"
                       value={form.zalo}
-                      onChange={(e) => handleChange("zalo", e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, ""); // only digits
+                        handleChange("zalo", value);
+                      }}
                     />
                     <input
                       type="text"
@@ -415,10 +453,15 @@ const UploadRoommateProfile = () => {
                     />
                     <input
                       type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       placeholder="Viber number"
                       className="border rounded-lg p-3"
                       value={form.viber}
-                      onChange={(e) => handleChange("viber", e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9]/g, ""); // only digits
+                        handleChange("viber", value);
+                      }}
                     />
                   </div>
                 </div>
@@ -431,7 +474,9 @@ const UploadRoommateProfile = () => {
                     Back
                   </button>
                   <button
-                    onClick={handleNext}
+                    onClick={() => {
+                      if (validateStep2() && validateFacebook()) handleNext();
+                    }}
                     disabled={!validateStep2()}
                     className={`px-6 py-2 rounded-lg ${
                       validateStep2()

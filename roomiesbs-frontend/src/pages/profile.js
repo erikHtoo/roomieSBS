@@ -14,7 +14,10 @@ const parseImageUrls = (val) => {
       const parsed = JSON.parse(val);
       if (Array.isArray(parsed)) return parsed.filter(Boolean);
     } catch (e) {}
-    return val.split(",").map((s) => s.trim()).filter(Boolean);
+    return val
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   return [];
 };
@@ -67,7 +70,9 @@ export default function Profile() {
       }
 
       // Update password
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
       if (error) setMsg(`❌ ${error.message}`);
       else setMsg("✅ Password updated successfully!");
     } catch (err) {
@@ -86,9 +91,10 @@ export default function Profile() {
   };
 
   const handleDeleteProfile = async () => {
-    if (!window.confirm("Are you sure you want to delete your profile?")) return;
+    if (!window.confirm("Are you sure you want to delete your profile?"))
+      return;
     try {
-      await axios.delete(`http://localhost:5000/roommates/${roommateProfile.id}`, {
+      await axios.delete(`http://localhost:5000/roommates`, {
         headers: session?.access_token
           ? { Authorization: `Bearer ${session.access_token}` }
           : {},
@@ -120,7 +126,9 @@ export default function Profile() {
             Logged in as <span className="font-medium">{user.email}</span>
           </p>
         ) : (
-          <p className="text-gray-500 text-base sm:text-lg">No user logged in</p>
+          <p className="text-gray-500 text-base sm:text-lg">
+            No user logged in
+          </p>
         )}
 
         {/* Update Password + Logout */}

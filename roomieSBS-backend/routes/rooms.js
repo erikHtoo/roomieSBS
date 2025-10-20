@@ -79,17 +79,15 @@ router.get("/:id", async (req, res) => {
     if (error) throw error;
     if (!data) return res.status(404).json({ error: "Listing not found" });
 
-    let parsedContact = data.contact;
-    try {
-      parsedContact =
-        typeof data.contact === "string"
-          ? JSON.parse(data.contact)
-          : data.contact;
-    } catch {
-      parsedContact = {};
-    }
+    // Parse contact, images, amenities safely
+    const parsed = {
+      ...data,
+      contact: tryParse(data.contact, {}),
+      image_urls: tryParse(data.image_urls, []),
+      amenities: tryParse(data.amenities, []),
+    };
 
-    res.json({ room: { ...data, contact: parsedContact } });
+    res.json({ room: parsed });
   } catch (err) {
     console.error("Error fetching room:", err);
     res.status(500).json({ error: err.message });
@@ -107,12 +105,34 @@ router.get("/", async (req, res) => {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    res.json({ rooms: data });
+
+    // Parse each listing's JSON fields
+    const parsedRooms = data.map((r) => ({
+      ...r,
+      contact: tryParse(r.contact, {}),
+      image_urls: tryParse(r.image_urls, []),
+      amenities: tryParse(r.amenities, []),
+    }));
+
+    res.json({ rooms: parsedRooms });
   } catch (err) {
     console.error("Error fetching rooms:", err);
     res.status(500).json({ error: "Failed to fetch rooms" });
   }
 });
+
+// ============================
+// Helper: safe JSON parse
+// ============================
+function tryParse(value, fallback) {
+  if (!value) return fallback;
+  if (typeof value === "object") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
 
 // ============================
 // READ for editing (only owner)

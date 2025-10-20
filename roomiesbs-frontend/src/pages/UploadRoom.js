@@ -57,7 +57,10 @@ const UploadRoom = () => {
   // Validation functions
   const validateStep1 = () => {
     const requiredFields = ["address", "roomType", "rent", "deposit"];
-    return requiredFields.every((field) => form[field]?.trim() !== "");
+    for (const field of requiredFields) {
+      if (!form[field]?.trim()) return false;
+    }
+    return true;
   };
 
   const validateStep2 = () => {
@@ -66,10 +69,13 @@ const UploadRoom = () => {
       "bathrooms",
       "about",
       "zalo",
-      "faecbook",
+      "facebook",
       "viber",
     ];
-    return requiredFields.every((field) => form[field]?.trim() !== "");
+    for (const field of requiredFields) {
+      if (!form[field]?.trim()) return false;
+    }
+    return true;
   };
 
   const validateAll = () => {
@@ -89,6 +95,35 @@ const UploadRoom = () => {
       requiredFields.every((field) => form[field]?.trim() !== "") &&
       form.imageUrls.length > 0
     ); // must have at least one image
+  };
+
+  const isValidUrl = (url) => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const validateFacebookLink = () => {
+    if (!isValidUrl(form.facebook)) {
+      toast.error(
+        "Please enter a valid Facebook link (must start with http or https)."
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const validateAddressLink = () => {
+    if (!isValidUrl(form.address)) {
+      toast.error(
+        "Please enter a valid address link (must start with http or https)."
+      );
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -250,7 +285,7 @@ const UploadRoom = () => {
                   <input
                     type="text"
                     className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter room address"
+                    placeholder="Enter a valid link"
                     value={form.address}
                     onChange={(e) => handleChange("address", e.target.value)}
                   />
@@ -284,32 +319,48 @@ const UploadRoom = () => {
                     <h2 className="font-medium text-gray-700 mb-2">Rent</h2>
                     <input
                       type="text"
+                      inputMode="numeric"
                       className="w-full border rounded-lg p-3"
-                      placeholder="Rent (USD)"
+                      placeholder="Rent (VND)"
                       value={form.rent}
-                      onChange={(e) => handleChange("rent", e.target.value)}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/[^\d]/g, ""); // only digits
+                        if (value) {
+                          value = parseInt(value).toLocaleString("en-US"); // format with commas
+                        }
+                        handleChange("rent", value);
+                      }}
                     />
                   </div>
                   <div>
                     <h2 className="font-medium text-gray-700 mb-2">Deposit</h2>
                     <input
                       type="text"
+                      inputMode="numeric"
                       className="w-full border rounded-lg p-3"
-                      placeholder="Deposit (USD)"
+                      placeholder="Deposit (VND)"
                       value={form.deposit}
-                      onChange={(e) => handleChange("deposit", e.target.value)}
+                      onChange={(e) => {
+                        let value = e.target.value.replace(/[^\d]/g, "");
+                        if (value) {
+                          value = parseInt(value).toLocaleString("en-US");
+                        }
+                        handleChange("deposit", value);
+                      }}
                     />
                   </div>
                 </div>
 
                 <div className="flex justify-end">
                   <button
-                    onClick={handleNext}
-                    disabled={!validateStep1()}
+                    onClick={() => {
+                      if (validateStep1() && validateAddressLink())
+                        handleNext();
+                    }}
                     className={`px-6 py-2 rounded-lg ${
                       validateStep1()
                         ? "bg-blue-500 text-white hover:bg-blue-600"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-gray-300 text-gray-500"
                     }`}
                   >
                     Next
@@ -332,7 +383,7 @@ const UploadRoom = () => {
                       {[1, 2, 3, 4].map((n) => (
                         <option key={n}>{n}</option>
                       ))}
-                      <option value="Other">Other</option>
+                      <option value="4+">4+</option>
                     </select>
                   </div>
 
@@ -351,7 +402,7 @@ const UploadRoom = () => {
                       {[1, 2, 3, 4].map((n) => (
                         <option key={n}>{n}</option>
                       ))}
-                      <option value="Other">Other</option>
+                      <option value="4+">4+</option>
                     </select>
                   </div>
                 </div>
@@ -420,9 +471,14 @@ const UploadRoom = () => {
                     <input
                       type="text"
                       placeholder="Zalo number"
+                      inputMode="numeric"
                       className="border rounded-lg p-3"
                       value={form.zalo}
-                      onChange={(e) => handleChange("zalo", e.target.value)}
+                      onChange={(e) => {
+                        // Only allow digits
+                        const value = e.target.value.replace(/\D/g, "");
+                        handleChange("zalo", value);
+                      }}
                     />
                     <input
                       type="text"
@@ -434,9 +490,13 @@ const UploadRoom = () => {
                     <input
                       type="text"
                       placeholder="Viber number"
+                      inputMode="numeric"
                       className="border rounded-lg p-3"
                       value={form.viber}
-                      onChange={(e) => handleChange("viber", e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        handleChange("viber", value);
+                      }}
                     />
                   </div>
                 </div>
@@ -449,12 +509,14 @@ const UploadRoom = () => {
                     Back
                   </button>
                   <button
-                    onClick={handleNext}
-                    disabled={!validateStep2()}
+                    onClick={() => {
+                      if (validateStep2() && validateFacebookLink())
+                        handleNext();
+                    }}
                     className={`px-6 py-2 rounded-lg ${
                       validateStep2()
                         ? "bg-blue-500 text-white hover:bg-blue-600"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-gray-300 text-gray-500"
                     }`}
                   >
                     Next

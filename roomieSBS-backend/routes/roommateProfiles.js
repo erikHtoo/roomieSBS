@@ -94,10 +94,8 @@ router.post("/", authMiddleware.verifyAuth, async (req, res) => {
             typeof person_contact === "object"
               ? JSON.stringify(person_contact)
               : person_contact,
-          person_friends: person_friends
-            ? JSON.stringify(person_friends)
-            : null,
-          person_traits: person_traits ? JSON.stringify(person_traits) : null,
+          person_friends: person_friends || null,
+          person_traits: person_traits || null,
           person_active: true,
         },
       ])
@@ -143,8 +141,8 @@ router.put("/", authMiddleware.verifyAuth, async (req, res) => {
           typeof person_contact === "object"
             ? JSON.stringify(person_contact)
             : person_contact,
-        person_friends: person_friends ? JSON.stringify(person_friends) : null,
-        person_traits: person_traits ? JSON.stringify(person_traits) : null,
+        person_friends: person_friends || null,
+        person_traits: person_traits || null,
         person_active: person_active !== undefined ? person_active : true,
       })
       .eq("id", req.user.id)

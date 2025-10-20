@@ -363,6 +363,30 @@ const EditRoom = () => {
                 </div>
 
                 <div>
+                  <label className="flex items-center gap-3 text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={form.transferContract}
+                      onChange={(e) =>
+                        handleChange("transferContract", e.target.checked)
+                      }
+                    />
+                    Transfer contract available?
+                  </label>
+                  {form.transferContract && (
+                    <input
+                      type="text"
+                      className="w-full border rounded-lg p-3 mt-3"
+                      placeholder="Remaining contract period"
+                      value={form.remainingContract}
+                      onChange={(e) =>
+                        handleChange("remainingContract", e.target.value)
+                      }
+                    />
+                  )}
+                </div>
+
+                <div>
                   <h2 className="font-medium text-gray-700 mb-2">
                     About the Area
                   </h2>
