@@ -128,19 +128,19 @@ export default function ListingPage() {
 
         <div className="flex items-center justify-center gap-3 mt-4">
           <Link
-            to="/"
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow hover:opacity-90 transition"
-          >
-            <FiHome size={18} />
-            Find Roommates
-          </Link>
-
-          <Link
             to="/upload"
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
           >
             <FiUpload size={18} />
             Upload Room
+          </Link>
+
+          <Link
+            to="/"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow hover:opacity-90 transition"
+          >
+            <FiHome size={18} />
+            Find Roommates
           </Link>
         </div>
       </section>

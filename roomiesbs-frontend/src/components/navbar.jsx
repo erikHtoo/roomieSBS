@@ -1,7 +1,15 @@
 // src/components/Navbar.jsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiUser, FiHome, FiMapPin, FiUsers, FiMenu, FiX } from "react-icons/fi";
+import {
+  FiUser,
+  FiHome,
+  FiMapPin,
+  FiUsers,
+  FiMenu,
+  FiX,
+  FiRepeat,
+} from "react-icons/fi";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,12 +29,20 @@ export default function Navbar() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-3">
           <Link
+            to="/exchange"
+            className="flex items-center gap-3 pt-2 px-4 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
+          >
+            MMK ⇄ VND
+          </Link>
+
+          <Link
             to="/"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
           >
             <FiUsers size={18} />
             Find Roommates
           </Link>
+
           <Link
             to="/rooms"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
@@ -34,6 +50,7 @@ export default function Navbar() {
             <FiMapPin size={18} />
             Find Rooms
           </Link>
+
           <Link
             to="/profile"
             className="p-2 bg-white/90 rounded-full flex items-center justify-center hover:bg-white shadow-sm hover:shadow-md transition"
@@ -69,6 +86,15 @@ export default function Navbar() {
         <div className="md:hidden bg-gradient-to-r from-rose-500 via-pink-500 to-red-500 shadow-md">
           <div className="flex flex-col gap-2 px-6 py-4">
             <Link
+              to="/exchange"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
+            >
+              <FiRepeat size={18} />
+              MMK↔VND
+            </Link>
+
+            <Link
               to="/"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
@@ -76,6 +102,7 @@ export default function Navbar() {
               <FiUsers size={18} />
               Find Roommates
             </Link>
+
             <Link
               to="/rooms"
               onClick={() => setIsOpen(false)}

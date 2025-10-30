@@ -17,6 +17,7 @@ import ListingPage from "./pages/listingPage.js";
 import UploadRoommateProfile from "./pages/UploadRoommate.js";
 import ProfilePage from "./pages/roommatePage.js";
 import EditRoommateProfile from "./pages/editRoommate.js";
+import Exchange from "./pages/exchange.js";
 
 // utilities
 import { Toaster } from "react-hot-toast";
@@ -47,6 +48,8 @@ function App() {
 
             <Route path="/" element={<HomePage />} />
             <Route path="/rooms" element={<ListingPage />} />
+
+            <Route path="/exchange" element={<Exchange />} />
 
             {/* Protected Routes */}
             <Route

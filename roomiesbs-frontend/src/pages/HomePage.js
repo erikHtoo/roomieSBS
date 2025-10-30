@@ -189,19 +189,19 @@ export default function HomePage() {
 
         <div className="flex items-center justify-center gap-3 mt-4">
           <Link
-            to="/rooms"
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow hover:opacity-90 transition"
-          >
-            <FiHome size={18} />
-            Look at Rooms
-          </Link>
-
-          <Link
             to="/create-profile"
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
           >
             <FiUpload size={18} />
             Roommate Profile
+          </Link>
+
+          <Link
+            to="/rooms"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow hover:opacity-90 transition"
+          >
+            <FiHome size={18} />
+            Look at Rooms
           </Link>
         </div>
       </section>
