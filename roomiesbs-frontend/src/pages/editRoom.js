@@ -371,13 +371,13 @@ const EditRoom = () => {
                         handleChange("transferContract", e.target.checked)
                       }
                     />
-                    Transfer contract available?
+                    Transfer contract?
                   </label>
                   {form.transferContract && (
                     <input
                       type="text"
                       className="w-full border rounded-lg p-3 mt-3"
-                      placeholder="Remaining contract period"
+                      placeholder="Remaining contract months"
                       value={form.remainingContract}
                       onChange={(e) =>
                         handleChange("remainingContract", e.target.value)

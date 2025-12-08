@@ -176,4 +176,32 @@ router.delete("/", authMiddleware.verifyAuth, async (req, res) => {
   }
 });
 
+// ============================
+// PATCH (Toggle Active Status)
+// ============================
+router.patch("/", authMiddleware.verifyAuth, async (req, res) => {
+  try {
+    const { person_active } = req.body;
+
+    if (typeof person_active !== "boolean") {
+      return res
+        .status(400)
+        .json({ success: false, error: "person_active must be boolean" });
+    }
+
+    const { data, error } = await supabase
+      .from("roommates_table")
+      .update({ person_active })
+      .eq("id", req.user.id)
+      .select();
+
+    if (error) throw error;
+
+    res.json({ success: true, updatedProfile: data[0] });
+  } catch (err) {
+    console.error("Error updating active status:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

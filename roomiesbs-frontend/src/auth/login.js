@@ -39,12 +39,12 @@ export default function Login() {
       <Navbar />
 
       {/* Login Card */}
-      <div className="max-w-md mx-auto mt-20 bg-white shadow-lg rounded-xl p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">
+      <div className="mx-4 sm:mx-auto sm:max-w-md md:max-w-lg lg:max-w-xl mt-8 sm:mt-20 bg-white shadow-lg rounded-xl p-6 sm:p-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 sm:mb-8 text-center">
           Welcome to RoomieSBS!
         </h2>
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-4">
           <input
             type="email"
             placeholder="Email"

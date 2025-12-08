@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/navbar";
 import axios from "axios";
+import { useAuth } from "../auth/useAuth.js";
 import { useParams } from "react-router-dom";
 import {
   FaFacebook,
@@ -62,6 +63,7 @@ const RoommatePage = () => {
   const [showFriends, setShowFriends] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
+  const { user, session } = useAuth();
 
   useEffect(() => {
     const fetchRoommate = async () => {
@@ -90,6 +92,26 @@ const RoommatePage = () => {
         Roommate not found.
       </div>
     );
+
+  // If profile is inactive, only the owner may view it
+  const isActive =
+    roommate.person_active === undefined ||
+    roommate.person_active === null ||
+    roommate.person_active === true ||
+    roommate.person_active === "true";
+
+  if (!isActive && session?.user?.id !== roommate.id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2 text-gray-800">
+            Profile not available
+          </h2>
+          <p className="text-gray-500">This profile is not publicly visible.</p>
+        </div>
+      </div>
+    );
+  }
 
   // ✅ Extract all data safely
   const {
@@ -174,12 +196,12 @@ const RoommatePage = () => {
   return (
     <div className="min-h-screen bg-[#f8f9fb] flex flex-col">
       <Navbar />
-      <div className="flex-grow flex flex-col items-center py-10 px-4">
+      <div className="flex-grow flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="w-full max-w-5xl"
+          className="w-full max-w-5xl mx-auto"
         >
           {/* Image */}
           {images.length > 0 && (
@@ -187,7 +209,8 @@ const RoommatePage = () => {
               <img
                 src={images[0]}
                 alt={person_name}
-                className="w-full h-[450px] sm:h-[550px] object-cover rounded-xl cursor-pointer"
+                className="w-full h-64 sm:h-[450px] md:h-[550px] object-cover rounded-xl cursor-pointer"
+                loading="lazy"
                 onClick={() => setSelectedIndex(0)}
               />
             </div>

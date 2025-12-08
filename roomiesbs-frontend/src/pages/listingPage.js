@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar.jsx";
@@ -54,6 +54,10 @@ export default function ListingPage() {
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [minRent, setMinRent] = useState("");
   const [maxRent, setMaxRent] = useState("");
+  const [tempSelectedAmenities, setTempSelectedAmenities] = useState([]);
+  const [tempMinRent, setTempMinRent] = useState("");
+  const [tempMaxRent, setTempMaxRent] = useState("");
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -101,10 +105,18 @@ export default function ListingPage() {
     if (maxRent && price > Number(maxRent)) return false;
 
     const roomAmenities = Array.isArray(room.amenities)
-      ? room.amenities.map((a) => a.replace(/["\]]/g, "").trim())
+      ? room.amenities.map((a) =>
+          a
+            .replace(/"/g, "")
+            .replace(/\[/g, "")
+            .replace(/\]/g, "")
+            .trim()
+        )
       : typeof room.amenities === "string"
       ? room.amenities
-          .replace(/[\[\]"]/g, "")
+          .replace(/\[/g, "")
+          .replace(/\]/g, "")
+          .replace(/"/g, "")
           .split(",")
           .map((a) => a.trim())
       : [];
@@ -148,75 +160,127 @@ export default function ListingPage() {
       {/* Gradient Separator */}
       <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-8" />
 
-      {/* Filter Controls (aligned left) */}
-      <div className="max-w-7xl mx-auto px-6 mb-6 flex items-center gap-4">
-        {/* Rent bubble */}
-        <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-5 py-2.5 rounded-xl border border-gray-200 shadow-sm h-[46px]">
-          <span className="text-gray-700 text-sm font-medium">Rent</span>
-          <input
-            type="number"
-            placeholder="Minimum"
-            value={minRent}
-            onChange={(e) => setMinRent(e.target.value)}
-            className="w-28 border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
-          />
-          <span className="text-gray-500 text-sm">-</span>
-          <input
-            type="number"
-            placeholder="Maximum"
-            value={maxRent}
-            onChange={(e) => setMaxRent(e.target.value)}
-            className="w-28 border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
-          />
-        </div>
-
-        {/* Filter dropdown bubble */}
-        <div className="relative">
-          <details className="group">
-            <summary className="flex items-center gap-2 cursor-pointer text-gray-700 text-sm font-medium bg-white/80 backdrop-blur-md border border-gray-200 rounded-xl px-5 py-2.5 shadow-sm hover:bg-white/90 transition h-[46px]">
-              <span>Filters</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-4 h-4 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </summary>
-
-            <div className="absolute mt-2 left-0 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-60 space-y-3 z-50">
-              <label className="text-xs text-gray-500">Amenities</label>
-              <div className="flex flex-col gap-2">
-                {Object.keys(amenityIcons).map((amenity) => (
-                  <label
-                    key={amenity}
-                    className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedAmenities.includes(amenity)}
-                      onChange={() =>
-                        setSelectedAmenities((prev) =>
-                          prev.includes(amenity)
-                            ? prev.filter((a) => a !== amenity)
-                            : [...prev, amenity]
-                        )
-                      }
-                      className="rounded border-gray-300 text-gray-700 focus:ring-gray-400"
-                    />
-                    {amenity}
-                  </label>
-                ))}
-              </div>
+      {/* Filter Controls (responsive) */}
+      <div className="mb-6">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {/* Rent bubble - full width on mobile, compact on desktop */}
+          <div className="w-full sm:w-[340px]">
+            <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 sm:px-5 py-2.5 rounded-xl border border-gray-200 shadow-sm h-[46px] w-full">
+              <span className="text-gray-700 text-sm font-medium">Rent</span>
+              <input
+                type="number"
+                placeholder="Min"
+                value={tempMinRent}
+                onChange={(e) => setTempMinRent(e.target.value)}
+                className="w-full sm:w-28 border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 appearance-none"
+              />
+              <span className="text-gray-500 text-sm">-</span>
+              <input
+                type="number"
+                placeholder="Max"
+                value={tempMaxRent}
+                onChange={(e) => setTempMaxRent(e.target.value)}
+                className="w-full sm:w-28 border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 appearance-none"
+              />
             </div>
-          </details>
+          </div>
+
+          {/* Filter dropdown bubble */}
+          <div className="w-full sm:w-auto relative" ref={dropdownRef}>
+            <details className="group">
+              <summary
+                onClick={() => {
+                  // initialize temp values when opening filters
+                  setTempSelectedAmenities(selectedAmenities);
+                  setTempMinRent(minRent);
+                  setTempMaxRent(maxRent);
+                }}
+                className="flex items-center gap-2 cursor-pointer text-gray-700 text-sm font-medium bg-white/80 backdrop-blur-md border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm hover:bg-white/90 transition h-[46px] w-full sm:w-auto"
+              >
+                <span>Filters</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 text-gray-500 transition-transform group-open:rotate-180"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </summary>
+
+              <div className="mt-2 sm:absolute left-0 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-full sm:w-60 space-y-3 z-50">
+                <label className="text-xs text-gray-500">Amenities</label>
+                <div className="flex flex-col gap-2">
+                  {Object.keys(amenityIcons).map((amenity) => (
+                    <label
+                      key={amenity}
+                      className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={tempSelectedAmenities.includes(amenity)}
+                        onChange={() =>
+                          setTempSelectedAmenities((prev) =>
+                            prev.includes(amenity)
+                              ? prev.filter((a) => a !== amenity)
+                              : [...prev, amenity]
+                          )
+                        }
+                        className="rounded border-gray-300 text-gray-700 focus:ring-gray-400"
+                      />
+                      {amenity}
+                    </label>
+                  ))}
+                </div>
+                {/* Reset + Apply Buttons for listing filters */}
+                <div className="flex justify-end items-center pt-2 border-t border-gray-100 gap-2">
+                  <button
+                    type="button"
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                    onClick={() => {
+                      // clear temps and applied filters
+                      setTempSelectedAmenities([]);
+                      setTempMinRent("");
+                      setTempMaxRent("");
+                      setSelectedAmenities([]);
+                      setMinRent("");
+                      setMaxRent("");
+                      try {
+                        const details =
+                          dropdownRef.current?.querySelector("details");
+                        if (details) details.open = false;
+                      } catch (e) {}
+                    }}
+                  >
+                    Reset
+                  </button>
+
+                  <button
+                    className="px-6 py-2 bg-pink-400 text-white font-semibold rounded-lg hover:bg-pink-500 transition text-base w-full sm:w-auto"
+                    onClick={() => {
+                      setSelectedAmenities(tempSelectedAmenities);
+                      setMinRent(tempMinRent);
+                      setMaxRent(tempMaxRent);
+                      // close the details dropdown if open
+                      try {
+                        const details =
+                          dropdownRef.current?.querySelector("details");
+                        if (details) details.open = false;
+                      } catch (e) {}
+                    }}
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
       </div>
 
@@ -236,10 +300,18 @@ export default function ListingPage() {
             const imgs = parseImageUrls(room.image_urls);
             const firstImage = imgs.length ? imgs[0] : placeholder;
             const amenities = Array.isArray(room.amenities)
-              ? room.amenities.map((a) => a.replace(/["\]]/g, "").trim())
+              ? room.amenities.map((a) =>
+                  a
+                    .replace(/"/g, "")
+                    .replace(/\[/g, "")
+                    .replace(/\]/g, "")
+                    .trim()
+                )
               : typeof room.amenities === "string"
               ? room.amenities
-                  .replace(/[\[\]"]/g, "")
+                  .replace(/\[/g, "")
+                  .replace(/\]/g, "")
+                  .replace(/"/g, "")
                   .split(",")
                   .map((a) => a.trim())
                   .filter(Boolean)
@@ -252,11 +324,12 @@ export default function ListingPage() {
                 className="group relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-300"
               >
                 {/* Image Section */}
-                <div className="relative h-56 w-full overflow-hidden">
+                <div className="relative h-48 sm:h-56 md:h-64 w-full overflow-hidden">
                   <img
                     src={firstImage}
                     alt="Room"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = placeholder;

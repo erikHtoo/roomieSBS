@@ -16,7 +16,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-gradient-to-r from-rose-500 via-pink-500 to-red-500 shadow-md">
-      <div className="max-w-6xl mx-auto flex justify-between items-center px-6 py-3">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8 py-3">
         {/* Logo / Brand */}
         <Link
           to="/"
@@ -60,18 +60,8 @@ export default function Navbar() {
           </Link>
         </nav>
 
-        {/* Mobile Controls */}
+        {/* Hamburger */}
         <div className="flex items-center gap-2 md:hidden">
-          {/* Profile button always visible */}
-          <Link
-            to="/profile"
-            className="p-2 bg-white/90 rounded-full flex items-center justify-center hover:bg-white shadow-sm hover:shadow-md transition"
-            title="Profile"
-          >
-            <FiUser size={22} className="text-rose-600" />
-          </Link>
-
-          {/* Hamburger */}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="text-white focus:outline-none"
@@ -83,33 +73,42 @@ export default function Navbar() {
 
       {/* Mobile Dropdown Menu */}
       {isOpen && (
-        <div className="md:hidden bg-gradient-to-r from-rose-500 via-pink-500 to-red-500 shadow-md">
-          <div className="flex flex-col gap-2 px-6 py-4">
+        <div className="md:hidden absolute top-[60px] right-4">
+          <div className="w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-lg py-2 border border-white/30">
+            <Link
+              to="/profile"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-4 py-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-lg"
+            >
+              Profile
+              <FiUser size={18} />
+            </Link>
+
             <Link
               to="/exchange"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
+              className="flex items-center justify-between px-4 py-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-lg"
             >
-              <FiRepeat size={18} />
               MMK↔VND
+              <FiRepeat size={18} />
             </Link>
 
             <Link
               to="/"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
+              className="flex items-center justify-between px-4 py-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-lg"
             >
-              <FiUsers size={18} />
               Find Roommates
+              <FiUsers size={18} />
             </Link>
 
             <Link
               to="/rooms"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
+              className="flex items-center justify-between px-4 py-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-lg"
             >
-              <FiMapPin size={18} />
               Find Rooms
+              <FiMapPin size={18} />
             </Link>
           </div>
         </div>

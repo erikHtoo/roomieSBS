@@ -81,12 +81,12 @@ const RoomPage = () => {
   return (
     <div className="min-h-screen bg-[#f8f9fb] flex flex-col">
       <Navbar />
-      <div className="flex-grow flex flex-col items-center py-10 px-4">
+      <div className="flex-grow flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="w-full max-w-5xl"
+          className="w-full max-w-5xl mx-auto"
         >
           {/* Image */}
           {images.length > 0 && (
@@ -94,7 +94,8 @@ const RoomPage = () => {
               <img
                 src={images[0]}
                 alt="main-room"
-                className="w-full h-[450px] sm:h-[550px] object-cover rounded-xl"
+                className="w-full h-64 sm:h-[450px] md:h-[550px] lg:h-[600px] object-cover rounded-xl"
+                loading="lazy"
                 onClick={() => setSelectedIndex(0)}
               />
             </div>

@@ -3,11 +3,13 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth.js";
 import Navbar from "../components/navbar.jsx";
-import { FiMoreVertical } from "react-icons/fi";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { HiArrowRight } from "react-icons/hi";
 
 export default function Profile() {
-  const { user, session } = useAuth();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const { user, session, signOut } = useAuth();
   const [roommateProfile, setRoommateProfile] = useState(null);
   const [myRooms, setMyRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +61,31 @@ export default function Profile() {
     setMenuOpen(menuOpen === id ? null : id);
   };
 
+  function safeParseArray(val) {
+    if (!val && val !== 0) return [];
+    if (Array.isArray(val)) return val.filter(Boolean);
+    if (typeof val === "string") {
+      // try JSON parse
+      let parsed = val;
+      for (let i = 0; i < 3; i++) {
+        try {
+          parsed = JSON.parse(parsed);
+        } catch {
+          break;
+        }
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      }
+      // fallback: comma separated
+      const cleaned = val.replace(/^"+|"+$/g, "").trim();
+      if (!cleaned) return [];
+      return cleaned
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    return [];
+  }
+
   if (loading)
     return <div className="p-10 text-center text-gray-600">Loading...</div>;
 
@@ -66,7 +93,7 @@ export default function Profile() {
     <div className="min-h-screen bg-gray-100 text-gray-800">
       <Navbar />
 
-      <div className="max-w-5xl mx-auto py-12 px-4 space-y-10">
+      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-10">
         {/* Profile Information */}
         <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <div className="flex justify-between items-center mb-6">
@@ -91,9 +118,17 @@ export default function Profile() {
               Change Password
             </button>
             <button
-              onClick={() => {
-                localStorage.removeItem("sb-access-token");
-                navigate("/login");
+              onClick={async () => {
+                try {
+                  if (typeof signOut === "function") await signOut();
+                } catch (err) {
+                  console.error("Sign out failed:", err);
+                } finally {
+                  try {
+                    localStorage.removeItem("sb-access-token");
+                  } catch {}
+                  navigate("/login");
+                }
               }}
               className="px-5 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition"
             >
@@ -110,52 +145,92 @@ export default function Profile() {
             </h2>
 
             {roommateProfile && (
-              <div
-                className="relative"
-                ref={(el) => (menuRefs.current["roommate"] = el)}
-              >
+              <div className="flex items-center gap-4">
+                {/* Status + Toggle Pill */}
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-sm font-medium ${
+                      roommateProfile.person_active
+                        ? "text-green-600"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {roommateProfile.person_active ? "Active" : "Inactive"}
+                  </span>
+
+                  <button
+                    onClick={async () => {
+                      try {
+                        const newStatus = !roommateProfile.person_active;
+                        await axios.patch(
+                          "http://localhost:5000/roommates",
+                          { person_active: newStatus },
+                          {
+                            headers: {
+                              Authorization: `Bearer ${session.access_token}`,
+                            },
+                          }
+                        );
+                        setRoommateProfile((prev) => ({
+                          ...prev,
+                          person_active: newStatus,
+                        }));
+                      } catch (err) {
+                        console.error("Failed to update active status:", err);
+                        alert("Failed to update status. Try again.");
+                      }
+                    }}
+                    className={`relative w-10 h-5 rounded-full transition-colors duration-300 focus:outline-none ${
+                      roommateProfile.person_active
+                        ? "bg-green-500"
+                        : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${
+                        roommateProfile.person_active
+                          ? "translate-x-5"
+                          : "translate-x-0"
+                      }`}
+                    ></span>
+                  </button>
+                </div>
+
+                {/* Edit icon */}
                 <button
-                  onClick={() => toggleMenu("roommate")}
+                  onClick={() => navigate("/edit-profile")}
                   className="p-2 rounded-full hover:bg-gray-100 transition"
+                  title="Edit Profile"
                 >
-                  <FiMoreVertical className="text-gray-600" size={20} />
+                  <FiEdit2 className="text-gray-700" size={18} />
                 </button>
-                {menuOpen === "roommate" && (
-                  <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-md w-36 z-10 animate-fade-in">
-                    <button
-                      onClick={() => {
-                        setMenuOpen(null);
-                        navigate("/edit-profile");
-                      }}
-                      className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50"
-                    >
-                      Edit Profile
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (
-                          window.confirm(
-                            "Are you sure you want to delete your profile?"
-                          )
-                        ) {
-                          await axios.delete(
-                            "http://localhost:5000/roommates",
-                            {
-                              headers: {
-                                Authorization: `Bearer ${session.access_token}`,
-                              },
-                            }
-                          );
-                          setRoommateProfile(null);
-                          setMenuOpen(null);
-                        }
-                      }}
-                      className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-50"
-                    >
-                      Delete Profile
-                    </button>
-                  </div>
-                )}
+
+                {/* Delete icon */}
+                <button
+                  onClick={async () => {
+                    if (
+                      window.confirm(
+                        "Are you sure you want to delete your profile?"
+                      )
+                    ) {
+                      try {
+                        await axios.delete("http://localhost:5000/roommates", {
+                          headers: {
+                            Authorization: `Bearer ${session.access_token}`,
+                          },
+                        });
+                        setRoommateProfile(null);
+                      } catch (err) {
+                        console.error("Delete failed:", err);
+                        alert("Failed to delete profile. Try again.");
+                      }
+                    }
+                  }}
+                  className="p-2 rounded-full hover:bg-gray-100 transition"
+                  title="Delete Profile"
+                >
+                  <FiTrash2 className="text-red-500" size={18} />
+                </button>
               </div>
             )}
           </div>
@@ -176,7 +251,8 @@ export default function Profile() {
                     <img
                       src={images[0]}
                       alt="Roommate"
-                      className="w-full h-56 rounded-xl object-cover shadow-sm border"
+                      className="w-full h-48 sm:h-56 md:h-64 rounded-xl object-cover shadow-sm border"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-56 bg-gray-200 rounded-xl flex items-center justify-center text-gray-500">
@@ -204,7 +280,7 @@ export default function Profile() {
                 {roommateProfile.person_traits && (
                   <p>
                     <strong>Traits:</strong>{" "}
-                    {JSON.parse(roommateProfile.person_traits).join(", ")}
+                    {safeParseArray(roommateProfile.person_traits).join(", ")}
                   </p>
                 )}
               </div>
@@ -279,70 +355,29 @@ export default function Profile() {
                       <p>
                         <strong>Address:</strong> {listing.address}
                       </p>
-                      <p>
-                        <strong>Status:</strong>{" "}
-                        <span
-                          className={
-                            listing.active
-                              ? "text-green-600 font-semibold"
-                              : "text-red-500 font-semibold"
-                          }
-                        >
-                          {listing.active ? "Active" : "Inactive"}
-                        </span>
-                      </p>
                     </div>
                   </div>
 
-                  {/* 3-dot menu */}
-                  <div
-                    className="relative"
-                    ref={(el) => (menuRefs.current[listing.room_id] = el)}
-                  >
+                  {/* Inline action icons */}
+                  <div className="flex items-center gap-3">
+                    {/* Edit icon */}
                     <button
-                      onClick={() => toggleMenu(listing.room_id)}
+                      onClick={() => navigate(`/edit/${listing.room_id}`)}
                       className="p-2 rounded-full hover:bg-gray-100 transition"
+                      title="Edit Listing"
                     >
-                      <FiMoreVertical className="text-gray-600" size={20} />
+                      <FiEdit2 className="text-gray-700" size={18} />
                     </button>
-                    {menuOpen === listing.room_id && (
-                      <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-md w-36 z-10 animate-fade-in">
-                        <button
-                          onClick={() => {
-                            setMenuOpen(null);
-                            navigate(`/edit/${listing.room_id}`);
-                          }}
-                          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (
-                              window.confirm("Are you sure you want to delete?")
-                            ) {
-                              await axios.delete(
-                                `http://localhost:5000/rooms/${listing.room_id}`,
-                                {
-                                  headers: {
-                                    Authorization: `Bearer ${session.access_token}`,
-                                  },
-                                }
-                              );
-                              setMyRooms((prev) =>
-                                prev.filter(
-                                  (r) => r.room_id !== listing.room_id
-                                )
-                              );
-                              setMenuOpen(null);
-                            }
-                          }}
-                          className="block w-full text-left px-4 py-2 text-red-500 hover:bg-gray-50"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
+
+                    {/* Delete icon */}
+                    <button
+                      onClick={() => {
+                        setDeleteTarget(listing.room_id);
+                        setConfirmOpen(true);
+                      }}
+                    >
+                      <FiTrash2 className="text-red-500" size={18} />
+                    </button>
                   </div>
                 </div>
 
@@ -361,6 +396,53 @@ export default function Profile() {
           )}
         </section>
       </div>
+      {/* Delete confirmation modal */}
+      {confirmOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-80 text-center animate-fade-in">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">
+              Delete Listing?
+            </h3>
+            <p className="text-gray-600 mb-6 text-sm">
+              This action cannot be undone. Are you sure you want to delete this
+              listing?
+            </p>
+
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await axios.delete(
+                      `http://localhost:5000/rooms/${deleteTarget}`,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${session.access_token}`,
+                        },
+                      }
+                    );
+                    setMyRooms((prev) =>
+                      prev.filter((r) => r.room_id !== deleteTarget)
+                    );
+                    setConfirmOpen(false);
+                  } catch (err) {
+                    console.error("Delete failed:", err);
+                    alert("Failed to delete listing. Try again.");
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition text-sm font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

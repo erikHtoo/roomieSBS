@@ -60,12 +60,12 @@ export default function Register() {
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
-      <div className="max-w-md mx-auto mt-20 bg-white shadow-lg rounded-xl p-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+      <div className="mx-4 sm:mx-auto sm:max-w-md md:max-w-lg lg:max-w-xl mt-8 sm:mt-20 bg-white shadow-lg rounded-xl p-6 sm:p-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 text-center">
           Register
         </h2>
 
-        <form onSubmit={handleRegister} className="space-y-5">
+        <form onSubmit={handleRegister} className="space-y-4">
           <input
             type="text"
             placeholder="Name"
@@ -110,7 +110,10 @@ export default function Register() {
         {/* Link to login */}
         <p className="text-sm text-gray-600 mt-6 text-center">
           Already registered?{" "}
-          <Link to="/login" className="text-rose-500 hover:underline font-medium">
+          <Link
+            to="/login"
+            className="text-rose-500 hover:underline font-medium"
+          >
             Login
           </Link>
         </p>

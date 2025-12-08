@@ -50,10 +50,14 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTraits, setSelectedTraits] = useState([]);
   const [movingFilter, setMovingFilter] = useState(""); // "alone" | "friends" | ""
+  const [genderFilter, setGenderFilter] = useState("");
   const [tempSelectedTraits, setTempSelectedTraits] = useState(selectedTraits);
   const [tempMovingFilter, setTempMovingFilter] = useState(movingFilter);
+  const [tempGenderFilter, setTempGenderFilter] = useState("");
+
   const dropdownRef = useRef(null);
   const { session } = useAuth();
+  const [hasProfile, setHasProfile] = useState(false);
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -61,8 +65,11 @@ export default function HomePage() {
         const res = await axios.get("http://localhost:5000/roommates/all", {
           timeout: 20000,
         });
+
         let profiles = res.data.profiles || [];
+
         if (session?.user?.id) {
+          setHasProfile(true);
           profiles = profiles.filter((p) => p.id !== session.user.id);
         }
         setProfiles(profiles);
@@ -89,14 +96,21 @@ export default function HomePage() {
   }, []);
 
   const filteredProfiles = profiles.filter((profile) => {
+    // hide inactive profiles
+    const isActive =
+      profile.person_active === undefined ||
+      profile.person_active === null ||
+      profile.person_active === true ||
+      profile.person_active === "true";
+    if (!isActive) return false;
     const matchesSearch =
       searchQuery === "" ||
       profile.person_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       profile.person_about?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const profileTraits = Array.isArray(profile.person_traits)
-      ? profile.person_traits
-      : [];
+    // Normalize traits and friends into arrays for robust matching
+    const profileTraits = safeParseArray(profile.person_traits);
+    const friendsArray = safeParseArray(profile.person_friends);
 
     const matchesTraits =
       selectedTraits.length === 0 ||
@@ -105,11 +119,27 @@ export default function HomePage() {
     const matchesMoving = !movingFilter
       ? true
       : movingFilter === "friends"
-      ? profile.person_friends === true
-      : profile.person_friends === false ||
-        profile.person_friends === undefined;
+      ? friendsArray.length > 0
+      : friendsArray.length === 0;
 
-    return matchesSearch && matchesTraits && matchesMoving;
+    // Gender matching: support boolean or string storage
+    const matchesGender = (() => {
+      if (!genderFilter) return true;
+      const g = profile.person_gender;
+      if (typeof g === "string") {
+        const low = g.toLowerCase();
+        return genderFilter === "male" ? low === "male" : low === "female";
+      }
+      if (typeof g === "boolean") {
+        return genderFilter === "male" ? g === true : g === false;
+      }
+      // fallback: treat truthy as male
+      return genderFilter === "male"
+        ? Boolean(g) === true
+        : Boolean(g) === false;
+    })();
+
+    return matchesSearch && matchesTraits && matchesMoving && matchesGender;
   });
 
   const placeholder =
@@ -130,7 +160,8 @@ export default function HomePage() {
     </div>
   );
 
-  const safeParseArray = (val) => {
+  // helper must be declared BEFORE it's used in filteredProfiles
+  function safeParseArray(val) {
     if (!val && val !== 0) return [];
     if (Array.isArray(val)) return val.filter(Boolean);
     if (typeof val === "string") {
@@ -164,7 +195,7 @@ export default function HomePage() {
         .filter(Boolean);
     }
     return [];
-  };
+  }
 
   const traitIcons = {
     "Pet Friendly": <FaPaw className="text-yellow-500" />,
@@ -189,7 +220,7 @@ export default function HomePage() {
 
         <div className="flex items-center justify-center gap-3 mt-4">
           <Link
-            to="/create-profile"
+            to={hasProfile ? "/edit-profile" : "/create-profile"}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
           >
             <FiUpload size={18} />
@@ -210,26 +241,35 @@ export default function HomePage() {
       <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-8" />
 
       {/* Filter Controls */}
-      <div className="flex ml-60 mb-6">
-        <div className="flex items-center gap-4 w-[450px]">
-          {/* Search Bar */}
-          <div className="relative flex-[3]">
-            <input
-              type="text"
-              placeholder="Search profiles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-rose-400"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition">
-              <FiSearch size={20} />
-            </span>
+      <div className="mb-6">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {/* Search Bar (mobile full-width) */}
+          <div className="w-full sm:w-[340px]">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search profiles..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-1 focus:ring-rose-400"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition">
+                <FiSearch size={20} />
+              </span>
+            </div>
           </div>
 
           {/* Filter Dropdown */}
-          <div className="relative flex-[1]" ref={dropdownRef}>
+          <div className="w-full sm:w-auto relative" ref={dropdownRef}>
             <details className="group">
-              <summary className="flex items-center justify-center gap-2 cursor-pointer text-gray-700 text-sm font-medium bg-white/80 backdrop-blur-md border border-gray-200 rounded-xl px-5 py-2.5 shadow-sm hover:bg-white/90 transition h-[46px] w-full">
+              <summary
+                onClick={() => {
+                  setTempSelectedTraits(selectedTraits);
+                  setTempMovingFilter(movingFilter);
+                  setTempGenderFilter(genderFilter);
+                }}
+                className="flex items-center justify-center gap-2 cursor-pointer text-gray-700 text-sm font-medium bg-white/80 backdrop-blur-md border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm hover:bg-white/90 transition h-[46px] w-full"
+              >
                 <span>Filters</span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -248,8 +288,33 @@ export default function HomePage() {
               </summary>
 
               {/* Dropdown Content */}
-              <div className="absolute mt-2 right-0 bg-white border border-gray-200 rounded-xl shadow-lg w-60 max-h-96 flex flex-col z-50 transition-all duration-200 ease-out transform scale-95 opacity-0 group-open:scale-100 group-open:opacity-100">
+              <div className="mt-2 sm:absolute right-0 bg-white border border-gray-200 rounded-xl shadow-lg w-full sm:w-60 max-h-96 flex flex-col z-50 transition-all duration-200 ease-out transform scale-95 opacity-0 group-open:scale-100 group-open:opacity-100">
                 <div className="p-4 space-y-4 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-rose-300 scrollbar-track-gray-100">
+                  {/* Gender */}
+                  <div>
+                    <h3 className="text-gray-600 text-sm font-medium mb-2">
+                      Gender:
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      {["male", "female"].map((g) => (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() =>
+                            setTempGenderFilter(tempGenderFilter === g ? "" : g)
+                          }
+                          className={`px-3 py-2 rounded-full border text-sm text-left w-full ${
+                            tempGenderFilter === g
+                              ? "bg-purple-500 text-white border-purple-500"
+                              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          {g === "male" ? "Male" : "Female"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Traits */}
                   <div>
                     <h3 className="text-gray-600 text-sm font-medium mb-2">
@@ -311,13 +376,40 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Apply Button */}
-                <div className="flex justify-center p-3 border-t border-gray-200">
+                {/* Reset + Apply Buttons */}
+                <div className="flex justify-end items-center p-3 border-t border-gray-200 gap-2">
                   <button
-                    className="px-6 py-2 bg-pink-400 text-white font-semibold rounded-lg hover:bg-pink-500 transition text-base min-w-[120px]"
+                    type="button"
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                    onClick={() => {
+                      // clear temp and applied filters
+                      setTempSelectedTraits([]);
+                      setTempMovingFilter("");
+                      setTempGenderFilter("");
+                      setSelectedTraits([]);
+                      setMovingFilter("");
+                      setGenderFilter("");
+                      try {
+                        const details =
+                          dropdownRef.current?.querySelector("details");
+                        if (details) details.open = false;
+                      } catch (e) {}
+                    }}
+                  >
+                    Reset
+                  </button>
+
+                  <button
+                    className="px-6 py-2 bg-pink-400 text-white font-semibold rounded-lg hover:bg-pink-500 transition text-base w-full sm:w-auto"
                     onClick={() => {
                       setSelectedTraits(tempSelectedTraits);
                       setMovingFilter(tempMovingFilter);
+                      setGenderFilter(tempGenderFilter);
+                      try {
+                        const details =
+                          dropdownRef.current?.querySelector("details");
+                        if (details) details.open = false;
+                      } catch (e) {}
                     }}
                   >
                     Apply
@@ -357,12 +449,13 @@ export default function HomePage() {
                 className="group relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-300 flex flex-col"
               >
                 {/* Image Section */}
-                <div className="relative h-56 w-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                <div className="relative h-48 sm:h-56 md:h-64 w-full overflow-hidden bg-gray-200 flex items-center justify-center">
                   {firstImage && (
                     <img
                       src={firstImage}
                       alt={profile.person_name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src = placeholder;

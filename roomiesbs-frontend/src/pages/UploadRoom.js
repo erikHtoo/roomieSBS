@@ -260,8 +260,8 @@ const UploadRoom = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <div className="flex-grow flex flex-col items-center py-12 px-4">
-        <div className="max-w-3xl w-full bg-white rounded-2xl shadow-md p-8">
+      <div className="flex-grow flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl w-full mx-auto bg-white rounded-2xl shadow-md p-8">
           <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
             Post Your Room
           </h1>

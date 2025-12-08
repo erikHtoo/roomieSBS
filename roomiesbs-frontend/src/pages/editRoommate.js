@@ -137,18 +137,50 @@ const EditRoommateProfile = () => {
           gender: p.person_gender ? "male" : "female",
           withFriends: p.person_friends ? "friends" : "alone",
           friends: (() => {
-            try {
-              const parsed = JSON.parse(p.person_friends || "[]");
-              return Array.isArray(parsed) && parsed.length
-                ? parsed
-                : [{ name: "", age: "" }];
-            } catch {
-              return [{ name: "", age: "" }];
+            const raw = p.person_friends;
+            if (!raw) return [{ name: "", age: "" }];
+            if (Array.isArray(raw))
+              return raw.length ? raw : [{ name: "", age: "" }];
+            if (typeof raw === "string") {
+              // try parsing once or twice (handle double-encoded JSON)
+              try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length) return parsed;
+              } catch {}
+
+              try {
+                const parsed2 = JSON.parse(JSON.parse(raw));
+                if (Array.isArray(parsed2) && parsed2.length) return parsed2;
+              } catch {}
             }
+            return [{ name: "", age: "" }];
           })(),
           preferredLocation: p.person_preferred_location || "",
           about: p.person_about || "",
-          traits: p.person_traits || [],
+          traits: (() => {
+            const raw = p.person_traits;
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw;
+            if (typeof raw === "string") {
+              try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed;
+              } catch {}
+
+              try {
+                const parsed2 = JSON.parse(JSON.parse(raw));
+                if (Array.isArray(parsed2)) return parsed2;
+              } catch {}
+
+              const inner = raw.replace(/^\[|\]$/g, "").trim();
+              if (!inner) return [];
+              return inner
+                .split(",")
+                .map((s) => s.trim().replace(/^"+|"+$/g, ""))
+                .filter(Boolean);
+            }
+            return [];
+          })(),
           zalo: JSON.parse(p.person_contact || "{}")?.zalo || "",
           facebook: JSON.parse(p.person_contact || "{}")?.facebook || "",
           viber: JSON.parse(p.person_contact || "{}")?.viber || "",
