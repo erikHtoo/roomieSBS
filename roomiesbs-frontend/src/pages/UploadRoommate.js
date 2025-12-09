@@ -5,6 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import DOMPurify from "dompurify";
 import {
   FaPaw,
   FaGamepad,
@@ -35,7 +36,24 @@ const UploadRoommateProfile = () => {
     imageUrls: [],
   });
 
-  const handleChange = (key, value) => setForm({ ...form, [key]: value });
+  const handleChange = (key, value) => {
+    // Apply character limits
+    if (key === "name" && value.length > 100) return;
+    if (key === "about" && value.length > 1200) return;
+    // Sanitize text fields to prevent XSS
+    const textFields = [
+      "name",
+      "about",
+      "preferredLocation",
+      "zalo",
+      "facebook",
+      "viber",
+    ];
+    const sanitizedValue = textFields.includes(key)
+      ? DOMPurify.sanitize(value)
+      : value;
+    setForm({ ...form, [key]: sanitizedValue });
+  };
 
   const handleFriendChange = (index, field, value) => {
     const updatedFriends = [...form.friends];
@@ -91,7 +109,15 @@ const UploadRoommateProfile = () => {
     return baseValid;
   };
 
-  const validateStep2 = () => form.about.trim() !== "";
+  const validateStep2 = () => {
+    // require about and at least one contact method
+    if (!form.about || String(form.about).trim() === "") return false;
+    const hasContact =
+      (form.zalo && String(form.zalo).trim() !== "") ||
+      (form.facebook && String(form.facebook).trim() !== "") ||
+      (form.viber && String(form.viber).trim() !== "");
+    return !!hasContact;
+  };
 
   const validateFacebook = () => {
     if (form.facebook && !/^https?:\/\/.+/i.test(form.facebook)) {
@@ -156,17 +182,31 @@ const UploadRoommateProfile = () => {
         uploadedUrls.push(publicUrlData.publicUrl);
       }
 
-      const cleanBudget = form.budget.replace(/,/g, "");
+      const cleanBudget = form.budget
+        ? typeof form.budget === "string"
+          ? parseFloat(form.budget.replace(/,/g, ""))
+          : form.budget
+        : "";
 
       const payload = {
         person_image_urls: uploadedUrls,
-        person_name: name,
+        person_name: DOMPurify.sanitize(name),
         person_gender: gender === "male",
         person_budget: cleanBudget,
-        person_preferred_location: preferredLocation,
-        person_about: about,
-        person_contact: { zalo, facebook, viber },
-        person_friends: withFriends === "friends" ? friends : null,
+        person_preferred_location: DOMPurify.sanitize(preferredLocation),
+        person_about: DOMPurify.sanitize(about),
+        person_contact: {
+          zalo: DOMPurify.sanitize(zalo),
+          facebook: DOMPurify.sanitize(facebook),
+          viber: DOMPurify.sanitize(viber),
+        },
+        person_friends:
+          withFriends === "friends"
+            ? friends.map((f) => ({
+                ...f,
+                name: DOMPurify.sanitize(f.name),
+              }))
+            : null,
         person_traits: traits && traits.length > 0 ? traits : null,
       };
 
@@ -233,7 +273,12 @@ const UploadRoommateProfile = () => {
             {step === 1 && (
               <div className="space-y-8">
                 <div>
-                  <h2 className="font-medium text-gray-700 mb-2">Name</h2>
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="font-medium text-gray-700">Name</h2>
+                    <span className="text-sm text-gray-500">
+                      {form.name.length}/100
+                    </span>
+                  </div>
                   <input
                     type="text"
                     className="w-full border rounded-lg p-3"
@@ -418,7 +463,12 @@ const UploadRoommateProfile = () => {
                 </div>
 
                 <div>
-                  <h2 className="font-medium text-gray-700 mb-2">About You</h2>
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="font-medium text-gray-700">About You</h2>
+                    <span className="text-sm text-gray-500">
+                      {form.about.length}/1200
+                    </span>
+                  </div>
                   <textarea
                     className="w-full border rounded-lg p-3 h-28"
                     placeholder="Describe yourself, lifestyle, habits, etc."

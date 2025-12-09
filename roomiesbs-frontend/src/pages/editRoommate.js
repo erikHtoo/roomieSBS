@@ -5,6 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import DOMPurify from "dompurify";
 import {
   FaPaw,
   FaGamepad,
@@ -37,7 +38,24 @@ const EditRoommateProfile = () => {
     imageUrls: [],
   });
 
-  const handleChange = (key, value) => setForm({ ...form, [key]: value });
+  const handleChange = (key, value) => {
+    // Apply character limits
+    if (key === "name" && value.length > 100) return;
+    if (key === "about" && value.length > 1200) return;
+    // Sanitize text fields to prevent XSS
+    const textFields = [
+      "name",
+      "about",
+      "preferredLocation",
+      "zalo",
+      "facebook",
+      "viber",
+    ];
+    const sanitizedValue = textFields.includes(key)
+      ? DOMPurify.sanitize(value)
+      : value;
+    setForm({ ...form, [key]: sanitizedValue });
+  };
 
   const handleFriendChange = (index, field, value) => {
     const updatedFriends = [...form.friends];
@@ -98,7 +116,15 @@ const EditRoommateProfile = () => {
     return baseValid;
   };
 
-  const validateStep2 = () => String(form.about || "").trim() !== "";
+  const validateStep2 = () => {
+    // require about and at least one contact method
+    if (!form.about || String(form.about).trim() === "") return false;
+    const hasContact =
+      (form.zalo && String(form.zalo).trim() !== "") ||
+      (form.facebook && String(form.facebook).trim() !== "") ||
+      (form.viber && String(form.viber).trim() !== "");
+    return !!hasContact;
+  };
 
   const validateAll = () =>
     Array.isArray(form.imageUrls) && form.imageUrls.length > 0;
@@ -233,19 +259,27 @@ const EditRoommateProfile = () => {
 
       const payload = {
         person_image_urls: uploadedUrls,
-        person_name: form.name,
-        person_age: form.age,
+        person_name: DOMPurify.sanitize(form.name),
         person_gender: form.gender === "male",
-        person_budget: form.budget,
-        person_deposit: form.deposit,
-        person_preferred_location: form.preferredLocation,
-        person_about: form.about,
+        person_budget: form.budget
+          ? typeof form.budget === "string"
+            ? parseFloat(form.budget.replace(/,/g, ""))
+            : form.budget
+          : "",
+        person_preferred_location: DOMPurify.sanitize(form.preferredLocation),
+        person_about: DOMPurify.sanitize(form.about),
         person_contact: {
-          zalo: form.zalo,
-          facebook: form.facebook,
-          viber: form.viber,
+          zalo: DOMPurify.sanitize(form.zalo),
+          facebook: DOMPurify.sanitize(form.facebook),
+          viber: DOMPurify.sanitize(form.viber),
         },
-        person_friends: form.withFriends === "friends" ? form.friends : null,
+        person_friends:
+          form.withFriends === "friends"
+            ? form.friends.map((f) => ({
+                ...f,
+                name: DOMPurify.sanitize(f.name),
+              }))
+            : null,
         person_traits: form.traits.length > 0 ? form.traits : null,
       };
 
@@ -338,7 +372,12 @@ const EditRoommateProfile = () => {
             {step === 1 && (
               <div className="space-y-8">
                 <div>
-                  <h2 className="font-medium text-gray-700 mb-2">Name</h2>
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="font-medium text-gray-700">Name</h2>
+                    <span className="text-sm text-gray-500">
+                      {form.name.length}/100
+                    </span>
+                  </div>
                   <input
                     type="text"
                     className="w-full border rounded-lg p-3"
@@ -497,7 +536,12 @@ const EditRoommateProfile = () => {
                 </div>
 
                 <div>
-                  <h2 className="font-medium text-gray-700 mb-2">About You</h2>
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="font-medium text-gray-700">About You</h2>
+                    <span className="text-sm text-gray-500">
+                      {form.about.length}/1200
+                    </span>
+                  </div>
                   <textarea
                     className="w-full border rounded-lg p-3 h-28"
                     value={form.about}

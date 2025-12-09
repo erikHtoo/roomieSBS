@@ -5,6 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import DOMPurify from "dompurify";
 import {
   FaParking,
   FaSwimmingPool,
@@ -19,6 +20,7 @@ const EditRoom = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
+  const errorShownRef = React.useRef(false);
   const [form, setForm] = useState({
     address: "",
     rent: "",
@@ -39,7 +41,11 @@ const EditRoom = () => {
 
   const handleNext = () => setStep((prev) => Math.min(prev + 1, 3));
   const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
-  const handleChange = (key, value) => setForm({ ...form, [key]: value });
+  const handleChange = (key, value) => {
+    // Apply character limits
+    if (key === "about" && value.length > 1200) return;
+    setForm({ ...form, [key]: value });
+  };
 
   const handleAmenityToggle = (amenity) => {
     setForm((prev) => {
@@ -60,10 +66,18 @@ const EditRoom = () => {
   useEffect(() => {
     const loadRoom = async () => {
       try {
-        const { data } = await axios.get(
-          `http://localhost:5000/rooms/${roomId}`
+        const { data } = await supabase.auth.getSession();
+        const token = data?.session?.access_token;
+
+        const { data: roomData } = await axios.get(
+          `http://localhost:5000/rooms/edit/${roomId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
-        const r = data.room;
+        const r = roomData.room;
 
         setForm({
           address: r.address || "",
@@ -86,6 +100,14 @@ const EditRoom = () => {
         });
       } catch (err) {
         console.error(err);
+        if (err.response?.status === 403) {
+          if (!errorShownRef.current) {
+            toast.error("You don't have permission to edit this room.");
+            errorShownRef.current = true;
+          }
+          navigate("/rooms");
+          return;
+        }
         toast.error("Failed to load room data.");
       } finally {
         setLoading(false);
@@ -93,7 +115,7 @@ const EditRoom = () => {
     };
 
     loadRoom();
-  }, [roomId]);
+  }, [roomId, navigate]);
 
   const handleSubmit = async () => {
     try {
@@ -150,18 +172,24 @@ const EditRoom = () => {
       const finalImageUrls = [...imageUrls, ...uploadedUrls];
 
       const payload = {
-        description: about,
-        rent,
-        deposit,
+        description: DOMPurify.sanitize(about),
+        rent: parseFloat(rent) || "",
+        deposit: parseFloat(deposit) || "",
         image_urls: finalImageUrls,
-        address,
-        contact: { zalo, facebook, viber },
+        address: DOMPurify.sanitize(address),
+        contact: {
+          zalo: DOMPurify.sanitize(zalo),
+          facebook: DOMPurify.sanitize(facebook),
+          viber: DOMPurify.sanitize(viber),
+        },
         transfer_contract: transferContract,
-        remaining_contract: remainingContract,
-        category: roomType,
-        bedrooms,
-        bathrooms,
-        amenities,
+        remaining_contract: remainingContract
+          ? parseFloat(remainingContract)
+          : null,
+        category: DOMPurify.sanitize(roomType),
+        bedrooms: parseInt(bedrooms) || "",
+        bathrooms: parseInt(bathrooms) || "",
+        amenities: amenities.map((a) => DOMPurify.sanitize(a)),
       };
 
       const updateRes = await axios.put(
@@ -184,7 +212,15 @@ const EditRoom = () => {
       navigate("/rooms");
     } catch (err) {
       console.error(err);
-      toast.error("Update failed. Please try again.");
+      // Show specific error message from backend if available
+      if (err.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else if (err.response?.data?.errors) {
+        const firstError = err.response.data.errors[0];
+        toast.error(firstError?.msg || "Validation failed");
+      } else {
+        toast.error("Update failed. Please try again.");
+      }
     }
   };
 
@@ -387,9 +423,14 @@ const EditRoom = () => {
                 </div>
 
                 <div>
-                  <h2 className="font-medium text-gray-700 mb-2">
-                    About the Area
-                  </h2>
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="font-medium text-gray-700">
+                      About the Area
+                    </h2>
+                    <span className="text-sm text-gray-500">
+                      {form.about.length}/1200
+                    </span>
+                  </div>
                   <textarea
                     className="w-full border rounded-lg p-3 h-28"
                     placeholder="Describe nearby area, accessibility, etc."

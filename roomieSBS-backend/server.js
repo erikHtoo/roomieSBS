@@ -45,6 +45,42 @@ app.use("/roommates", roommatesRouter);
 const exchangeRoutes = require("./routes/exchange.js");
 app.use("/exchange", exchangeRoutes);
 
+// ============================
+// Global Error Handling Middleware
+// ============================
+app.use((err, req, res, next) => {
+  // Log full error with stack trace for debugging
+  console.error("=== ERROR ===");
+  console.error("Timestamp:", new Date().toISOString());
+  console.error("Method:", req.method);
+  console.error("URL:", req.url);
+  console.error("Status:", err.status || 500);
+  console.error("Message:", err.message);
+  console.error("Stack:", err.stack);
+  console.error("===============");
+
+  // Send clean message to user (no internal details)
+  const statusCode = err.status || 500;
+  const userMessage =
+    statusCode === 500
+      ? "Internal server error. Please try again later."
+      : err.message || "An error occurred";
+
+  res.status(statusCode).json({
+    success: false,
+    error: userMessage,
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }), // Only expose stack in dev
+  });
+});
+
+// 404 handler (must be after all routes)
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: "Route not found",
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

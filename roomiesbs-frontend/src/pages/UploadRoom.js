@@ -5,6 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import DOMPurify from "dompurify";
 import {
   FaParking,
   FaSwimmingPool,
@@ -37,7 +38,23 @@ const UploadRoom = () => {
   const handleNext = () => setStep((prev) => Math.min(prev + 1, 3));
   const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
-  const handleChange = (key, value) => setForm({ ...form, [key]: value });
+  const handleChange = (key, value) => {
+    // Apply character limits
+    if (key === "about" && value.length > 1200) return;
+    // Sanitize text fields to prevent XSS
+    const textFields = [
+      "address",
+      "about",
+      "remainingContract",
+      "zalo",
+      "facebook",
+      "viber",
+    ];
+    const sanitizedValue = textFields.includes(key)
+      ? DOMPurify.sanitize(value)
+      : value;
+    setForm({ ...form, [key]: sanitizedValue });
+  };
 
   const handleAmenityToggle = (amenity) => {
     setForm((prev) => {
@@ -64,18 +81,16 @@ const UploadRoom = () => {
   };
 
   const validateStep2 = () => {
-    const requiredFields = [
-      "bedrooms",
-      "bathrooms",
-      "about",
-      "zalo",
-      "facebook",
-      "viber",
-    ];
+    const requiredFields = ["bedrooms", "bathrooms", "about"];
     for (const field of requiredFields) {
       if (!form[field]?.trim()) return false;
     }
-    return true;
+    // Require at least one contact method
+    const hasContact =
+      (form.zalo && String(form.zalo).trim() !== "") ||
+      (form.facebook && String(form.facebook).trim() !== "") ||
+      (form.viber && String(form.viber).trim() !== "");
+    return hasContact;
   };
 
   const validateAll = () => {
@@ -95,35 +110,6 @@ const UploadRoom = () => {
       requiredFields.every((field) => form[field]?.trim() !== "") &&
       form.imageUrls.length > 0
     ); // must have at least one image
-  };
-
-  const isValidUrl = (url) => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const validateFacebookLink = () => {
-    if (!isValidUrl(form.facebook)) {
-      toast.error(
-        "Please enter a valid Facebook link (must start with http or https)."
-      );
-      return false;
-    }
-    return true;
-  };
-
-  const validateAddressLink = () => {
-    if (!isValidUrl(form.address)) {
-      toast.error(
-        "Please enter a valid address link (must start with http or https)."
-      );
-      return false;
-    }
-    return true;
   };
 
   const handleSubmit = async () => {
@@ -183,18 +169,24 @@ const UploadRoom = () => {
 
       // 4️⃣ Create room (with image URLs)
       const payload = {
-        description: about,
-        rent,
-        deposit,
+        description: DOMPurify.sanitize(about),
+        rent: parseFloat(rent) || "",
+        deposit: parseFloat(deposit) || "",
         image_urls: uploadedUrls, // already uploaded
-        address,
-        contact: { zalo, facebook, viber },
+        address: DOMPurify.sanitize(address),
+        contact: {
+          zalo: DOMPurify.sanitize(zalo),
+          facebook: DOMPurify.sanitize(facebook),
+          viber: DOMPurify.sanitize(viber),
+        },
         transfer_contract: transferContract,
-        remaining_contract: remainingContract,
-        category: roomType,
-        bedrooms,
-        bathrooms,
-        amenities,
+        remaining_contract: remainingContract
+          ? parseFloat(remainingContract)
+          : null,
+        category: DOMPurify.sanitize(roomType),
+        bedrooms: parseInt(bedrooms) || "",
+        bathrooms: parseInt(bathrooms) || "",
+        amenities: amenities.map((a) => DOMPurify.sanitize(a)),
         created_at: createdAt,
       };
 
@@ -237,7 +229,15 @@ const UploadRoom = () => {
       navigate("/rooms");
     } catch (err) {
       console.error(err);
-      toast.error("Server error. Please try again.");
+      // Show specific error message from backend if available
+      if (err.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else if (err.response?.data?.errors) {
+        const firstError = err.response.data.errors[0];
+        toast.error(firstError?.msg || "Validation failed");
+      } else {
+        toast.error("Server error. Please try again.");
+      }
     }
   };
 
@@ -354,8 +354,7 @@ const UploadRoom = () => {
                 <div className="flex justify-end">
                   <button
                     onClick={() => {
-                      if (validateStep1() && validateAddressLink())
-                        handleNext();
+                      if (validateStep1()) handleNext();
                     }}
                     className={`px-6 py-2 rounded-lg ${
                       validateStep1()
@@ -428,9 +427,14 @@ const UploadRoom = () => {
                 </div>
 
                 <div>
-                  <h2 className="font-medium text-gray-700 mb-2">
-                    About the Area
-                  </h2>
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="font-medium text-gray-700">
+                      About the Area
+                    </h2>
+                    <span className="text-sm text-gray-500">
+                      {form.about.length}/1200
+                    </span>
+                  </div>
                   <textarea
                     className="w-full border rounded-lg p-3 h-28"
                     placeholder="Describe nearby area, accessibility, etc."
@@ -510,8 +514,7 @@ const UploadRoom = () => {
                   </button>
                   <button
                     onClick={() => {
-                      if (validateStep2() && validateFacebookLink())
-                        handleNext();
+                      if (validateStep2()) handleNext();
                     }}
                     className={`px-6 py-2 rounded-lg ${
                       validateStep2()
