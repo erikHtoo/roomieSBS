@@ -144,9 +144,12 @@ const EditRoommateProfile = () => {
           return;
         }
 
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/roommates`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/roommates`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         const p = res.data.profile;
         if (!p) {
@@ -308,12 +311,16 @@ const EditRoommateProfile = () => {
 
       console.log("Sending payload:", JSON.stringify(payload, null, 2));
 
-      const res = await axios.put(`${process.env.REACT_APP_API_URL}/roommates`, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.put(
+        `${process.env.REACT_APP_API_URL}/roommates`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.data.success) {
         toast.error("Failed to update profile.");

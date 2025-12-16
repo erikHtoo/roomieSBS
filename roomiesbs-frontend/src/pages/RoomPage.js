@@ -26,7 +26,9 @@ const RoomPage = () => {
   useEffect(() => {
     const fetchRoom = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/rooms/${id}`);
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/rooms/${id}`
+        );
         setRoom(res.data.room);
         setImages(res.data.room.image_urls || []);
       } catch (err) {

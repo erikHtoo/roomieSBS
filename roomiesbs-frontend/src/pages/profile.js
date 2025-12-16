@@ -23,14 +23,20 @@ export default function Profile() {
     if (!session) return;
     const fetchData = async () => {
       try {
-        const profileRes = await axios.get(`${process.env.REACT_APP_API_URL}/roommates`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
+        const profileRes = await axios.get(
+          `${process.env.REACT_APP_API_URL}/roommates`,
+          {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }
+        );
         setRoommateProfile(profileRes.data.profile);
 
-        const listingsRes = await axios.get(`${process.env.REACT_APP_API_URL}/rooms`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
+        const listingsRes = await axios.get(
+          `${process.env.REACT_APP_API_URL}/rooms`,
+          {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }
+        );
         const myOwnedRooms = listingsRes.data.rooms.filter(
           (room) => room.owner_id === user?.id
         );
@@ -452,11 +458,14 @@ export default function Profile() {
               <button
                 onClick={async () => {
                   try {
-                    await axios.delete(`${process.env.REACT_APP_API_URL}/roommates`, {
-                      headers: {
-                        Authorization: `Bearer ${session.access_token}`,
-                      },
-                    });
+                    await axios.delete(
+                      `${process.env.REACT_APP_API_URL}/roommates`,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${session.access_token}`,
+                        },
+                      }
+                    );
                     setRoommateProfile(null);
                     setShowProfileDelete(false);
                     toast.success("Roommate profile deleted successfully!");

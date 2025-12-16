@@ -62,19 +62,25 @@ export default function HomePage() {
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/roommates/all`, {
-          timeout: 20000,
-        });
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/roommates/all`,
+          {
+            timeout: 20000,
+          }
+        );
 
         let profiles = res.data.profiles || [];
 
         // If logged in, check whether current user has a roommate profile
         if (session?.access_token && session?.user?.id) {
           try {
-            const me = await axios.get(`${process.env.REACT_APP_API_URL}/roommates`, {
-              headers: { Authorization: `Bearer ${session.access_token}` },
-              timeout: 10000,
-            });
+            const me = await axios.get(
+              `${process.env.REACT_APP_API_URL}/roommates`,
+              {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+                timeout: 10000,
+              }
+            );
             const has = !!me.data?.profile;
             setHasProfile(has);
             // Hide my own profile from explore grid if present

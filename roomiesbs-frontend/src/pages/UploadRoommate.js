@@ -215,12 +215,16 @@ const UploadRoommateProfile = () => {
         person_traits: traits && traits.length > 0 ? traits : undefined,
       };
 
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/roommates`, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/roommates`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.data.success) {
         toast.error("Failed to upload roommate profile.");
