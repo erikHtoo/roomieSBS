@@ -5,6 +5,7 @@ import { useAuth } from "../auth/useAuth.js";
 import Navbar from "../components/navbar.jsx";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { HiArrowRight } from "react-icons/hi";
+import toast from "react-hot-toast";
 
 export default function Profile() {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -14,6 +15,7 @@ export default function Profile() {
   const [myRooms, setMyRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(null);
+  const [showProfileDelete, setShowProfileDelete] = useState(false);
   const menuRefs = useRef({}); // Track multiple menus
   const navigate = useNavigate();
 
@@ -177,7 +179,7 @@ export default function Profile() {
                         }));
                       } catch (err) {
                         console.error("Failed to update active status:", err);
-                        alert("Failed to update status. Try again.");
+                        toast.error("Failed to update status. Try again.");
                       }
                     }}
                     className={`relative w-10 h-5 rounded-full transition-colors duration-300 focus:outline-none ${
@@ -207,25 +209,7 @@ export default function Profile() {
 
                 {/* Delete icon */}
                 <button
-                  onClick={async () => {
-                    if (
-                      window.confirm(
-                        "Are you sure you want to delete your profile?"
-                      )
-                    ) {
-                      try {
-                        await axios.delete("http://localhost:5000/roommates", {
-                          headers: {
-                            Authorization: `Bearer ${session.access_token}`,
-                          },
-                        });
-                        setRoommateProfile(null);
-                      } catch (err) {
-                        console.error("Delete failed:", err);
-                        alert("Failed to delete profile. Try again.");
-                      }
-                    }
-                  }}
+                  onClick={() => setShowProfileDelete(true)}
                   className="p-2 rounded-full hover:bg-gray-100 transition"
                   title="Delete Profile"
                 >
@@ -300,7 +284,7 @@ export default function Profile() {
             <div className="text-center text-gray-500">
               No roommate profile found.{" "}
               <button
-                onClick={() => navigate("/create-roommate")}
+                onClick={() => navigate("/create-profile")}
                 className="text-blue-500 hover:underline"
               >
                 Create one
@@ -350,7 +334,8 @@ export default function Profile() {
                         {listing.category || "Untitled Listing"}
                       </p>
                       <p>
-                        <strong>Price:</strong> {listing.rent} / month
+                        <strong>Price:</strong>{" "}
+                        {parseInt(listing.rent).toLocaleString("en-US")} VND /
                       </p>
                       <p>
                         <strong>Address:</strong> {listing.address}
@@ -430,9 +415,54 @@ export default function Profile() {
                       prev.filter((r) => r.room_id !== deleteTarget)
                     );
                     setConfirmOpen(false);
+                    toast.success("Listing deleted successfully!");
                   } catch (err) {
                     console.error("Delete failed:", err);
-                    alert("Failed to delete listing. Try again.");
+                    toast.error("Failed to delete listing. Try again.");
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition text-sm font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Roommate profile delete confirmation modal */}
+      {showProfileDelete && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-80 text-center animate-fade-in">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">
+              Delete Profile?
+            </h3>
+            <p className="text-gray-600 mb-6 text-sm">
+              This action cannot be undone. Are you sure you want to delete your
+              roommate profile?
+            </p>
+
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => setShowProfileDelete(false)}
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await axios.delete("http://localhost:5000/roommates", {
+                      headers: {
+                        Authorization: `Bearer ${session.access_token}`,
+                      },
+                    });
+                    setRoommateProfile(null);
+                    setShowProfileDelete(false);
+                    toast.success("Roommate profile deleted successfully!");
+                  } catch (err) {
+                    console.error("Failed to delete profile:", err);
+                    toast.error("Failed to delete profile. Try again.");
                   }
                 }}
                 className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition text-sm font-medium"

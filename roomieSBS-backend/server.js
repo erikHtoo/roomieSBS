@@ -11,24 +11,29 @@ const compression = require("compression");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// app.use(cors({ origin: 'https://frontend.example' }));
+// CORS must run before other middlewares so all responses include headers
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+    credentials: true,
+  })
+);
 // Security headers
 app.use(helmet());
-// Rate limiting: 100 requests per 15 minutes per IP
+// Rate limiting: allow higher throughput for local dev, and ensure 429 includes CORS
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  max: 1000, // dev: raise limit to avoid accidental 429s
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use(limiter);
 // Compress responses (prefer JSON)
 app.use(
   compression({
-    threshold: 0, // compress everything
+    threshold: 0,
   })
 );
-app.use(cors());
 // Body size limits to protect against large payloads
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ limit: "1mb", extended: true }));

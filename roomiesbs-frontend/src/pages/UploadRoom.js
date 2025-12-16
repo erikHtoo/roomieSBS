@@ -18,6 +18,7 @@ import {
 const UploadRoom = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     address: "",
     rent: "",
@@ -113,6 +114,10 @@ const UploadRoom = () => {
   };
 
   const handleSubmit = async () => {
+    // Prevent duplicate submissions
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       const {
         address,
@@ -138,6 +143,7 @@ const UploadRoom = () => {
 
       if (!token || !ownerId) {
         toast.error("You must be logged in to post a room.");
+        setIsSubmitting(false);
         return;
       }
 
@@ -156,6 +162,7 @@ const UploadRoom = () => {
         if (uploadError) {
           console.error("Upload failed:", uploadError);
           toast.error(`Failed to upload ${file.name}`);
+          setIsSubmitting(false);
           continue;
         }
 
@@ -203,6 +210,7 @@ const UploadRoom = () => {
 
       if (!createRes.data.success) {
         toast.error("Failed to create room.");
+        setIsSubmitting(false);
         return;
       }
 
@@ -238,6 +246,8 @@ const UploadRoom = () => {
       } else {
         toast.error("Server error. Please try again.");
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -322,13 +332,16 @@ const UploadRoom = () => {
                       inputMode="numeric"
                       className="w-full border rounded-lg p-3"
                       placeholder="Rent (VND)"
-                      value={form.rent}
+                      value={
+                        form.rent
+                          ? parseInt(
+                              form.rent.toString().replace(/[^\d]/g, "")
+                            ).toLocaleString("en-US")
+                          : ""
+                      }
                       onChange={(e) => {
-                        let value = e.target.value.replace(/[^\d]/g, ""); // only digits
-                        if (value) {
-                          value = parseInt(value).toLocaleString("en-US"); // format with commas
-                        }
-                        handleChange("rent", value);
+                        const cleanValue = e.target.value.replace(/[^\d]/g, "");
+                        handleChange("rent", cleanValue);
                       }}
                     />
                   </div>
@@ -339,13 +352,16 @@ const UploadRoom = () => {
                       inputMode="numeric"
                       className="w-full border rounded-lg p-3"
                       placeholder="Deposit (VND)"
-                      value={form.deposit}
+                      value={
+                        form.deposit
+                          ? parseInt(
+                              form.deposit.toString().replace(/[^\d]/g, "")
+                            ).toLocaleString("en-US")
+                          : ""
+                      }
                       onChange={(e) => {
-                        let value = e.target.value.replace(/[^\d]/g, "");
-                        if (value) {
-                          value = parseInt(value).toLocaleString("en-US");
-                        }
-                        handleChange("deposit", value);
+                        const cleanValue = e.target.value.replace(/[^\d]/g, "");
+                        handleChange("deposit", cleanValue);
                       }}
                     />
                   </div>
@@ -599,14 +615,14 @@ const UploadRoom = () => {
                   </button>
                   <button
                     onClick={handleSubmit}
-                    disabled={!validateAll()}
+                    disabled={!validateAll() || isSubmitting}
                     className={`px-6 py-2 rounded-lg ${
-                      validateAll()
+                      validateAll() && !isSubmitting
                         ? "bg-blue-500 text-white hover:bg-blue-600"
                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}
                   >
-                    Upload Room
+                    {isSubmitting ? "Uploading..." : "Upload Room"}
                   </button>
                 </div>
               </div>

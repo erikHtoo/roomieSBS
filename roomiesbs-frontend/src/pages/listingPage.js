@@ -106,11 +106,7 @@ export default function ListingPage() {
 
     const roomAmenities = Array.isArray(room.amenities)
       ? room.amenities.map((a) =>
-          a
-            .replace(/"/g, "")
-            .replace(/\[/g, "")
-            .replace(/\]/g, "")
-            .trim()
+          a.replace(/"/g, "").replace(/\[/g, "").replace(/\]/g, "").trim()
         )
       : typeof room.amenities === "string"
       ? room.amenities
@@ -340,7 +336,9 @@ export default function ListingPage() {
                   {/* Bottom bar */}
                   <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                     <span className="px-3 py-1.5 bg-rose-500/90 text-white text-sm font-semibold rounded-full shadow-md">
-                      {room.rent ? `${room.rent} ₫` : "—"}
+                      {room.rent
+                        ? `${parseInt(room.rent).toLocaleString("en-US")} ₫`
+                        : "—"}
                     </span>
                     <div className="flex gap-1">
                       {amenities.slice(0, 3).map((am, idx) => (

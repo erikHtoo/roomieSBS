@@ -79,6 +79,17 @@ const EditRoom = () => {
         );
         const r = roomData.room;
 
+        const parsedAmenities = Array.isArray(r.amenities)
+          ? r.amenities
+          : (() => {
+              try {
+                const parsed = JSON.parse(r.amenities || "[]");
+                return Array.isArray(parsed) ? parsed : [];
+              } catch {
+                return [];
+              }
+            })();
+
         setForm({
           address: r.address || "",
           rent: r.rent || "",
@@ -86,7 +97,7 @@ const EditRoom = () => {
           roomType: r.category || "",
           bedrooms: r.bedrooms || "",
           bathrooms: r.bathrooms || "",
-          amenities: r.amenities || [],
+          amenities: parsedAmenities,
           about: r.description || "",
           transferContract: !!r.transfer_contract,
           remainingContract: r.remaining_contract || "",
@@ -171,6 +182,17 @@ const EditRoom = () => {
 
       const finalImageUrls = [...imageUrls, ...uploadedUrls];
 
+      const amenitiesArray = Array.isArray(amenities)
+        ? amenities
+        : (() => {
+            try {
+              const parsed = JSON.parse(amenities || "[]");
+              return Array.isArray(parsed) ? parsed : [];
+            } catch {
+              return [];
+            }
+          })();
+
       const payload = {
         description: DOMPurify.sanitize(about),
         rent: parseFloat(rent) || "",
@@ -189,7 +211,7 @@ const EditRoom = () => {
         category: DOMPurify.sanitize(roomType),
         bedrooms: parseInt(bedrooms) || "",
         bathrooms: parseInt(bathrooms) || "",
-        amenities: amenities.map((a) => DOMPurify.sanitize(a)),
+        amenities: amenitiesArray.map((a) => DOMPurify.sanitize(a)),
       };
 
       const updateRes = await axios.put(
@@ -313,20 +335,40 @@ const EditRoom = () => {
                     <h2 className="font-medium text-gray-700 mb-2">Rent</h2>
                     <input
                       type="text"
+                      inputMode="numeric"
                       className="w-full border rounded-lg p-3"
                       placeholder="Rent (USD)"
-                      value={form.rent}
-                      onChange={(e) => handleChange("rent", e.target.value)}
+                      value={
+                        form.rent
+                          ? parseInt(
+                              form.rent.toString().replace(/[^\d]/g, "")
+                            ).toLocaleString("en-US")
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const cleanValue = e.target.value.replace(/[^\d]/g, "");
+                        handleChange("rent", cleanValue);
+                      }}
                     />
                   </div>
                   <div>
                     <h2 className="font-medium text-gray-700 mb-2">Deposit</h2>
                     <input
                       type="text"
+                      inputMode="numeric"
                       className="w-full border rounded-lg p-3"
                       placeholder="Deposit (USD)"
-                      value={form.deposit}
-                      onChange={(e) => handleChange("deposit", e.target.value)}
+                      value={
+                        form.deposit
+                          ? parseInt(
+                              form.deposit.toString().replace(/[^\d]/g, "")
+                            ).toLocaleString("en-US")
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const cleanValue = e.target.value.replace(/[^\d]/g, "");
+                        handleChange("deposit", cleanValue);
+                      }}
                     />
                   </div>
                 </div>

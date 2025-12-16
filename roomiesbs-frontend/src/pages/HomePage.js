@@ -68,10 +68,25 @@ export default function HomePage() {
 
         let profiles = res.data.profiles || [];
 
-        if (session?.user?.id) {
-          setHasProfile(true);
-          profiles = profiles.filter((p) => p.id !== session.user.id);
+        // If logged in, check whether current user has a roommate profile
+        if (session?.access_token && session?.user?.id) {
+          try {
+            const me = await axios.get("http://localhost:5000/roommates", {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+              timeout: 10000,
+            });
+            const has = !!me.data?.profile;
+            setHasProfile(has);
+            // Hide my own profile from explore grid if present
+            profiles = profiles.filter((p) => p.id !== session.user.id);
+          } catch (e) {
+            // If auth call fails, assume no profile so clicking goes to create
+            setHasProfile(false);
+          }
+        } else {
+          setHasProfile(false);
         }
+
         setProfiles(profiles);
       } catch (err) {
         console.error(err);

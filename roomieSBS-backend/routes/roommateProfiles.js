@@ -82,8 +82,14 @@ router.post(
     body("person_gender").optional().toBoolean().isBoolean(),
     body("person_budget")
       .optional()
-      .isNumeric()
-      .withMessage("person_budget must be a number"),
+      .custom((value) => {
+        if (value === undefined || value === null) return true;
+        const num = typeof value === "string" ? parseFloat(value) : value;
+        if (isNaN(num) || !isFinite(num)) {
+          throw new Error("person_budget must be a valid number");
+        }
+        return true;
+      }),
     body("person_preferred_location").optional().isString(),
     body("person_about").optional().isString(),
     body("person_contact").optional(),
@@ -197,8 +203,14 @@ router.put(
     body("person_gender").optional().toBoolean().isBoolean(),
     body("person_budget")
       .optional()
-      .isNumeric()
-      .withMessage("person_budget must be a number"),
+      .custom((value) => {
+        if (value === undefined || value === null) return true;
+        const num = typeof value === "string" ? parseFloat(value) : value;
+        if (isNaN(num) || !isFinite(num)) {
+          throw new Error("person_budget must be a valid number");
+        }
+        return true;
+      }),
     body("person_preferred_location").optional().isString(),
     body("person_about").optional().isString(),
     body("person_contact").optional(),

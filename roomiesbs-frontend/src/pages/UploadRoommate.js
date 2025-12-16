@@ -182,11 +182,16 @@ const UploadRoommateProfile = () => {
         uploadedUrls.push(publicUrlData.publicUrl);
       }
 
-      const cleanBudget = form.budget
-        ? typeof form.budget === "string"
-          ? parseFloat(form.budget.replace(/,/g, ""))
-          : form.budget
-        : "";
+      const cleanBudget = (() => {
+        if (!form.budget) return undefined;
+        if (typeof form.budget === "string") {
+          const stripped = form.budget.replace(/,/g, "");
+          if (stripped.trim() === "") return undefined;
+          const num = parseFloat(stripped);
+          return isNaN(num) ? undefined : num;
+        }
+        return form.budget;
+      })();
 
       const payload = {
         person_image_urls: uploadedUrls,
@@ -206,8 +211,8 @@ const UploadRoommateProfile = () => {
                 ...f,
                 name: DOMPurify.sanitize(f.name),
               }))
-            : null,
-        person_traits: traits && traits.length > 0 ? traits : null,
+            : undefined,
+        person_traits: traits && traits.length > 0 ? traits : undefined,
       };
 
       const res = await axios.post("http://localhost:5000/roommates", payload, {
@@ -226,7 +231,16 @@ const UploadRoommateProfile = () => {
       navigate("/");
     } catch (err) {
       console.error(err);
-      toast.error("Server error. Please try again.");
+      if (err.response?.data?.errors) {
+        const first = err.response.data.errors[0];
+        toast.error(first?.msg || "Validation failed");
+      } else if (err.response?.data?.error) {
+        toast.error(err.response.data.error);
+      } else if (err.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error("Server error. Please try again.");
+      }
     }
   };
 

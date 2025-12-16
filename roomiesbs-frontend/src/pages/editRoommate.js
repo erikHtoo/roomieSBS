@@ -257,31 +257,56 @@ const EditRoommateProfile = () => {
         }
       }
 
+      // Build payload - only send fields with valid values
+      const budgetValue = form.budget
+        ? typeof form.budget === "string"
+          ? parseFloat(form.budget.replace(/,/g, ""))
+          : form.budget
+        : undefined;
+
+      // Only include contact if at least one method is provided
+      const contactObj = {};
+      if (form.zalo && form.zalo.trim())
+        contactObj.zalo = DOMPurify.sanitize(form.zalo);
+      if (form.facebook && form.facebook.trim())
+        contactObj.facebook = DOMPurify.sanitize(form.facebook);
+      if (form.viber && form.viber.trim())
+        contactObj.viber = DOMPurify.sanitize(form.viber);
+
       const payload = {
         person_image_urls: uploadedUrls,
         person_name: DOMPurify.sanitize(form.name),
         person_gender: form.gender === "male",
-        person_budget: form.budget
-          ? typeof form.budget === "string"
-            ? parseFloat(form.budget.replace(/,/g, ""))
-            : form.budget
-          : "",
         person_preferred_location: DOMPurify.sanitize(form.preferredLocation),
         person_about: DOMPurify.sanitize(form.about),
-        person_contact: {
-          zalo: DOMPurify.sanitize(form.zalo),
-          facebook: DOMPurify.sanitize(form.facebook),
-          viber: DOMPurify.sanitize(form.viber),
-        },
-        person_friends:
-          form.withFriends === "friends"
-            ? form.friends.map((f) => ({
-                ...f,
-                name: DOMPurify.sanitize(f.name),
-              }))
-            : null,
-        person_traits: form.traits.length > 0 ? form.traits : null,
       };
+
+      // Only add contact if we have at least one method
+      if (Object.keys(contactObj).length > 0) {
+        payload.person_contact = contactObj;
+      }
+
+      // Only add budget if it has a value
+      if (budgetValue !== undefined) {
+        payload.person_budget = budgetValue;
+      }
+
+      // Only add friends if "with friends" mode
+      if (form.withFriends === "friends") {
+        payload.person_friends = form.friends.map((f) => ({
+          ...f,
+          name: DOMPurify.sanitize(f.name),
+        }));
+      }
+      // If alone, don't include person_friends in payload at all
+
+      // Only add traits if any selected
+      if (form.traits.length > 0) {
+        payload.person_traits = form.traits;
+      }
+      // If no traits, don't include person_traits in payload at all
+
+      console.log("Sending payload:", JSON.stringify(payload, null, 2));
 
       const res = await axios.put("http://localhost:5000/roommates", payload, {
         headers: {
@@ -298,8 +323,14 @@ const EditRoommateProfile = () => {
       toast.success("Profile updated successfully!");
       navigate("/");
     } catch (err) {
-      console.error(err);
-      toast.error("Update failed.");
+      console.error("Full error:", err);
+      console.error("Response data:", err.response?.data);
+      console.error("Errors array:", err.response?.data?.errors);
+      const errorMsg =
+        err.response?.data?.errors?.[0]?.msg ||
+        err.response?.data?.error ||
+        "Update failed. Please check your inputs.";
+      toast.error(errorMsg);
     }
   };
 
