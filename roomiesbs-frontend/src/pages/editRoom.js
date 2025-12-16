@@ -70,7 +70,7 @@ const EditRoom = () => {
         const token = data?.session?.access_token;
 
         const { data: roomData } = await axios.get(
-          `http://localhost:5000/rooms/edit/${roomId}`,
+          `${process.env.REACT_APP_API_URL}/rooms/edit/${roomId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -215,7 +215,7 @@ const EditRoom = () => {
       };
 
       const updateRes = await axios.put(
-        `http://localhost:5000/rooms/${roomId}`,
+        `${process.env.REACT_APP_API_URL}/rooms/${roomId}`,
         payload,
         {
           headers: {

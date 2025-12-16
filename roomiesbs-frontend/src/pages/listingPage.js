@@ -62,7 +62,7 @@ export default function ListingPage() {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/rooms", {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/rooms`, {
           timeout: 20000,
         });
         setRooms(res.data.rooms || []);

@@ -144,7 +144,7 @@ const EditRoommateProfile = () => {
           return;
         }
 
-        const res = await axios.get("http://localhost:5000/roommates", {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/roommates`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -308,7 +308,7 @@ const EditRoommateProfile = () => {
 
       console.log("Sending payload:", JSON.stringify(payload, null, 2));
 
-      const res = await axios.put("http://localhost:5000/roommates", payload, {
+      const res = await axios.put(`${process.env.REACT_APP_API_URL}/roommates`, payload, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

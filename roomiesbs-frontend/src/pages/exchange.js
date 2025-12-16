@@ -23,7 +23,7 @@ export default function Exchange() {
   useEffect(() => {
     const fetchRate = async () => {
       try {
-        const response = await fetch("http://localhost:5000/exchange");
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/exchange`);
         const data = await response.json();
         if (data.rate) {
           setRate(data.rate);

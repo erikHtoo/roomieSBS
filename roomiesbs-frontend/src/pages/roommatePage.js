@@ -68,7 +68,7 @@ const RoommatePage = () => {
   useEffect(() => {
     const fetchRoommate = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/roommates/${id}`);
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/roommates/${id}`);
         setRoommate(res.data.profile);
       } catch (err) {
         console.error("Failed to fetch roommate:", err);

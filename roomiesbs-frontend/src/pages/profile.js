@@ -23,12 +23,12 @@ export default function Profile() {
     if (!session) return;
     const fetchData = async () => {
       try {
-        const profileRes = await axios.get("http://localhost:5000/roommates", {
+        const profileRes = await axios.get(`${process.env.REACT_APP_API_URL}/roommates`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         setRoommateProfile(profileRes.data.profile);
 
-        const listingsRes = await axios.get("http://localhost:5000/rooms", {
+        const listingsRes = await axios.get(`${process.env.REACT_APP_API_URL}/rooms`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         const myOwnedRooms = listingsRes.data.rooms.filter(
@@ -165,7 +165,7 @@ export default function Profile() {
                       try {
                         const newStatus = !roommateProfile.person_active;
                         await axios.patch(
-                          "http://localhost:5000/roommates",
+                          `${process.env.REACT_APP_API_URL}/roommates`,
                           { person_active: newStatus },
                           {
                             headers: {
@@ -404,7 +404,7 @@ export default function Profile() {
                 onClick={async () => {
                   try {
                     await axios.delete(
-                      `http://localhost:5000/rooms/${deleteTarget}`,
+                      `${process.env.REACT_APP_API_URL}/rooms/${deleteTarget}`,
                       {
                         headers: {
                           Authorization: `Bearer ${session.access_token}`,
@@ -452,7 +452,7 @@ export default function Profile() {
               <button
                 onClick={async () => {
                   try {
-                    await axios.delete("http://localhost:5000/roommates", {
+                    await axios.delete(`${process.env.REACT_APP_API_URL}/roommates`, {
                       headers: {
                         Authorization: `Bearer ${session.access_token}`,
                       },

@@ -62,7 +62,7 @@ export default function HomePage() {
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/roommates/all", {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/roommates/all`, {
           timeout: 20000,
         });
 
@@ -71,7 +71,7 @@ export default function HomePage() {
         // If logged in, check whether current user has a roommate profile
         if (session?.access_token && session?.user?.id) {
           try {
-            const me = await axios.get("http://localhost:5000/roommates", {
+            const me = await axios.get(`${process.env.REACT_APP_API_URL}/roommates`, {
               headers: { Authorization: `Bearer ${session.access_token}` },
               timeout: 10000,
             });

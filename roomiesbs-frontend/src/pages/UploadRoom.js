@@ -198,7 +198,7 @@ const UploadRoom = () => {
       };
 
       const createRes = await axios.post(
-        "http://localhost:5000/rooms",
+        `${process.env.REACT_APP_API_URL}/rooms`,
         payload,
         {
           headers: {
