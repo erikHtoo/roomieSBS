@@ -12,9 +12,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // CORS must run before other middlewares so all responses include headers
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:3000";
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: CORS_ORIGIN,
     credentials: true,
   })
 );
