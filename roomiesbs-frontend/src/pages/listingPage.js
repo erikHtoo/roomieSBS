@@ -45,6 +45,14 @@ const parseImageUrls = (val) => {
   return [];
 };
 
+const normalizeAmenityValue = (amenity) => {
+  if (typeof amenity === "string") return amenity;
+  if (amenity && typeof amenity === "object") {
+    return amenity.name || amenity.label || amenity.value || "";
+  }
+  return amenity == null ? "" : String(amenity);
+};
+
 export default function ListingPage() {
   const isMobile = useIsMobile();
 
@@ -79,7 +87,7 @@ export default function ListingPage() {
   const placeholder =
     "data:image/svg+xml;utf8," +
     encodeURIComponent(
-      `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%' height='100%' fill='%23e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23737474'>No Image</text></svg>`
+      `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%' height='100%' fill='%23e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23737474'>No Image</text></svg>`,
     );
 
   const SkeletonCard = () => (
@@ -99,23 +107,27 @@ export default function ListingPage() {
 
   // === Filter Logic ===
   const filteredRooms = rooms.filter((room) => {
-    const price = Number(room.rent?.replace(/\D/g, "")) || 0;
+    const price = Number(String(room.rent ?? "").replace(/\D/g, "")) || 0;
 
     if (minRent && price < Number(minRent)) return false;
     if (maxRent && price > Number(maxRent)) return false;
 
     const roomAmenities = Array.isArray(room.amenities)
       ? room.amenities.map((a) =>
-          a.replace(/"/g, "").replace(/\[/g, "").replace(/\]/g, "").trim()
+          normalizeAmenityValue(a)
+            .replace(/"/g, "")
+            .replace(/\[/g, "")
+            .replace(/\]/g, "")
+            .trim(),
         )
       : typeof room.amenities === "string"
-      ? room.amenities
-          .replace(/\[/g, "")
-          .replace(/\]/g, "")
-          .replace(/"/g, "")
-          .split(",")
-          .map((a) => a.trim())
-      : [];
+        ? room.amenities
+            .replace(/\[/g, "")
+            .replace(/\]/g, "")
+            .replace(/"/g, "")
+            .split(",")
+            .map((a) => a.trim())
+        : [];
 
     const matchesAmenities =
       selectedAmenities.length === 0 ||
@@ -225,7 +237,7 @@ export default function ListingPage() {
                           setTempSelectedAmenities((prev) =>
                             prev.includes(amenity)
                               ? prev.filter((a) => a !== amenity)
-                              : [...prev, amenity]
+                              : [...prev, amenity],
                           )
                         }
                         className="rounded border-gray-300 text-gray-700 focus:ring-gray-400"
@@ -301,17 +313,17 @@ export default function ListingPage() {
                     .replace(/"/g, "")
                     .replace(/\[/g, "")
                     .replace(/\]/g, "")
-                    .trim()
+                    .trim(),
                 )
               : typeof room.amenities === "string"
-              ? room.amenities
-                  .replace(/\[/g, "")
-                  .replace(/\]/g, "")
-                  .replace(/"/g, "")
-                  .split(",")
-                  .map((a) => a.trim())
-                  .filter(Boolean)
-              : [];
+                ? room.amenities
+                    .replace(/\[/g, "")
+                    .replace(/\]/g, "")
+                    .replace(/"/g, "")
+                    .split(",")
+                    .map((a) => a.trim())
+                    .filter(Boolean)
+                : [];
 
             return (
               <Link

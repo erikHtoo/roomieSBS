@@ -27,7 +27,7 @@ const RoomPage = () => {
     const fetchRoom = async () => {
       try {
         const res = await axios.get(
-          `${process.env.REACT_APP_API_URL}/rooms/${id}`
+          `${process.env.REACT_APP_API_URL}/rooms/${id}`,
         );
         setRoom(res.data.room);
         setImages(res.data.room.image_urls || []);
@@ -46,12 +46,20 @@ const RoomPage = () => {
     );
 
   const contact =
-    typeof room.contact === "string" ? JSON.parse(room.contact) : room.contact;
+    typeof room.contact === "string"
+      ? (() => {
+          try {
+            return JSON.parse(room.contact);
+          } catch {
+            return {};
+          }
+        })()
+      : room.contact || {};
   const formattedDate = new Date(room.created_at).toLocaleDateString();
 
   const formatPrice = (value) => {
-    if (!value) return "-";
-    const num = parseFloat(value.replace(/[^\d.]/g, ""));
+    if (value === null || value === undefined || value === "") return "-";
+    const num = parseFloat(String(value).replace(/[^\d.]/g, ""));
     if (isNaN(num)) return value;
     return num.toLocaleString("en-US");
   };
@@ -77,8 +85,17 @@ const RoomPage = () => {
 
   const amenitiesArray =
     typeof room.amenities === "string"
-      ? JSON.parse(room.amenities)
-      : room.amenities || [];
+      ? (() => {
+          try {
+            const parsed = JSON.parse(room.amenities);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })()
+      : Array.isArray(room.amenities)
+        ? room.amenities
+        : [];
 
   return (
     <div className="min-h-screen bg-[#f8f9fb] flex flex-col">

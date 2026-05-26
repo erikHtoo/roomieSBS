@@ -42,6 +42,8 @@ const parseImageUrls = (val) => {
   return [];
 };
 
+const safeText = (value) => String(value ?? "");
+
 export default function HomePage() {
   const isMobile = useIsMobile();
   const [profiles, setProfiles] = useState([]);
@@ -66,7 +68,7 @@ export default function HomePage() {
           `${process.env.REACT_APP_API_URL}/roommates/all`,
           {
             timeout: 20000,
-          }
+          },
         );
 
         let profiles = res.data.profiles || [];
@@ -79,7 +81,7 @@ export default function HomePage() {
               {
                 headers: { Authorization: `Bearer ${session.access_token}` },
                 timeout: 10000,
-              }
+              },
             );
             const has = !!me.data?.profile;
             setHasProfile(has);
@@ -126,8 +128,12 @@ export default function HomePage() {
     if (!isActive) return false;
     const matchesSearch =
       searchQuery === "" ||
-      profile.person_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      profile.person_about?.toLowerCase().includes(searchQuery.toLowerCase());
+      safeText(profile.person_name)
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      safeText(profile.person_about)
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
 
     // Normalize traits and friends into arrays for robust matching
     const profileTraits = safeParseArray(profile.person_traits);
@@ -140,8 +146,8 @@ export default function HomePage() {
     const matchesMoving = !movingFilter
       ? true
       : movingFilter === "friends"
-      ? friendsArray.length > 0
-      : friendsArray.length === 0;
+        ? friendsArray.length > 0
+        : friendsArray.length === 0;
 
     // Gender matching: support boolean or string storage
     const matchesGender = (() => {
@@ -166,7 +172,7 @@ export default function HomePage() {
   const placeholder =
     "data:image/svg+xml;utf8," +
     encodeURIComponent(
-      `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%' height='100%' fill='%23e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23737474'>No Image</text></svg>`
+      `<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%' height='100%' fill='%23e5e7eb'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='24' fill='%23737474'>No Image</text></svg>`,
     );
 
   const SkeletonCard = () => (
@@ -357,7 +363,7 @@ export default function HomePage() {
                                 setTempSelectedTraits((prev) =>
                                   prev.includes(name)
                                     ? prev.filter((t) => t !== name)
-                                    : [...prev, name]
+                                    : [...prev, name],
                                 )
                               }
                               className="rounded border-gray-300 text-gray-700 focus:ring-gray-400"
@@ -381,7 +387,7 @@ export default function HomePage() {
                           type="button"
                           onClick={() =>
                             setTempMovingFilter(
-                              tempMovingFilter === opt ? "" : opt
+                              tempMovingFilter === opt ? "" : opt,
                             )
                           }
                           className={`px-3 py-2 rounded-full border text-sm text-left w-full ${
