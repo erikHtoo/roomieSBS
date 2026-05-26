@@ -19,6 +19,11 @@ export default function Register() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          name,
+        },
+      },
     });
 
     if (error) {
@@ -28,29 +33,6 @@ export default function Register() {
         setErrorMsg(error.message);
       }
       return;
-    }
-
-    const user = data.user;
-
-    if (user) {
-      const { error: profileError } = await supabase
-        .from("user_profiles")
-        .insert([
-          {
-            user_profile_id: user.id,
-            email: email,
-            name: name,
-          },
-        ]);
-
-      if (profileError) {
-        if (profileError.code === "23505") {
-          setErrorMsg("This email is already registered.");
-        } else {
-          setErrorMsg(profileError.message);
-        }
-        return;
-      }
     }
 
     setSuccessMsg("Check your email to confirm your account!");
