@@ -51,12 +51,12 @@ app.use("/roommates", roommatesRouter);
 const exchangeRoutes = require("./routes/exchange.js");
 app.use("/exchange", exchangeRoutes);
 
-// Root health check for uptime monitors and quick browser probes
-app.get("/", (req, res) => {
+// Explicit health check for uptime monitors
+app.get("/health", (req, res) => {
   res.status(200).json({ success: true, status: "ok" });
 });
 
-app.head("/", (req, res) => {
+app.head("/health", (req, res) => {
   res.sendStatus(200);
 });
 
