@@ -98,9 +98,12 @@ const RoomPage = () => {
         : [];
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] flex flex-col">
+    <div
+      className="min-h-screen bg-[#f8f9fb] flex flex-col"
+      style={{ zoom: 0.9 }}
+    >
       <Navbar />
-      <div className="flex-grow flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
+      <div className="flex-grow flex flex-col items-center pt-4 pb-10 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}

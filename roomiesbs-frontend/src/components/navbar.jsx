@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FiUser,
-  FiHome,
   FiMapPin,
   FiUsers,
   FiMenu,
@@ -20,10 +19,17 @@ export default function Navbar() {
         {/* Logo / Brand */}
         <Link
           to="/"
-          className="flex items-center gap-2 text-white font-extrabold text-2xl tracking-tight hover:opacity-90 transition"
+          className="flex items-center gap-1 hover:opacity-90 transition shrink-0"
         >
-          <FiHome size={26} className="text-white" />
-          RoomieSBS
+          <img
+            src="/assets/unimatesLogo.png"
+            alt="UniMates"
+            className="-translate-y-px h-12 sm:h-14 lg:h-16 w-auto shrink-0 object-contain"
+          />
+          <span className="-ml-1 -translate-y-1 text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-none drop-shadow-sm">
+            <span className="text-white">Uni</span>
+            <span className="text-cyan-100">Mates</span>
+          </span>
         </Link>
 
         {/* Desktop Nav */}

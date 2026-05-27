@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: CORS_ORIGIN,
     credentials: true,
-  })
+  }),
 );
 // Security headers
 app.use(helmet());
@@ -33,7 +33,7 @@ app.use(limiter);
 app.use(
   compression({
     threshold: 0,
-  })
+  }),
 );
 // Body size limits to protect against large payloads
 app.use(express.json({ limit: "1mb" }));

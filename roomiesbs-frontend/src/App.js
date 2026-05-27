@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // auth provider
@@ -23,6 +24,10 @@ import Exchange from "./pages/exchange.js";
 import { Toaster } from "react-hot-toast";
 
 function App() {
+  useEffect(() => {
+    document.title = "UniMates";
+  }, []);
+
   return (
     <>
       <Router>

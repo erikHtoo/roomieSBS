@@ -69,7 +69,7 @@ const RoommatePage = () => {
     const fetchRoommate = async () => {
       try {
         const res = await axios.get(
-          `${process.env.REACT_APP_API_URL}/roommates/${id}`
+          `${process.env.REACT_APP_API_URL}/roommates/${id}`,
         );
         setRoommate(res.data.profile);
       } catch (err) {
@@ -180,7 +180,7 @@ const RoommatePage = () => {
     if (images.length === 0) return;
     setSelectedIndex((prev) => (prev - 1 + images.length) % images.length);
     setSelectedImage(
-      images[(selectedIndex - 1 + images.length) % images.length]
+      images[(selectedIndex - 1 + images.length) % images.length],
     );
   };
 
@@ -196,9 +196,12 @@ const RoommatePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] flex flex-col">
+    <div
+      className="min-h-screen bg-[#f8f9fb] flex flex-col"
+      style={{ zoom: 0.9 }}
+    >
       <Navbar />
-      <div className="flex-grow flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
+      <div className="flex-grow flex flex-col items-center pt-4 pb-10 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -228,8 +231,8 @@ const RoommatePage = () => {
                 {person_gender === false
                   ? "Female"
                   : person_gender
-                  ? "Male"
-                  : "Not specified"}
+                    ? "Male"
+                    : "Not specified"}
               </span>
             </div>
             <p className="text-sm text-gray-400 mt-1">

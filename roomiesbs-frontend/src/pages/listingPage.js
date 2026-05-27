@@ -84,6 +84,19 @@ export default function ListingPage() {
     fetchRooms();
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        const details = dropdownRef.current.querySelector("details");
+        if (details && details.open) details.open = false;
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const placeholder =
     "data:image/svg+xml;utf8," +
     encodeURIComponent(

@@ -41,7 +41,7 @@ export default function Login() {
       {/* Login Card */}
       <div className="mx-4 sm:mx-auto sm:max-w-md md:max-w-lg lg:max-w-xl mt-8 sm:mt-20 bg-white shadow-lg rounded-xl p-6 sm:p-8">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 sm:mb-8 text-center">
-          Welcome to RoomieSBS!
+          Welcome to UniMates!
         </h2>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -75,7 +75,7 @@ export default function Login() {
 
         {/* Link to register */}
         <p className="text-sm text-gray-600 mt-6 text-center">
-          New to RoomieSBS?{" "}
+          New to UniMates?{" "}
           <Link
             to="/register"
             className="text-rose-500 hover:underline font-medium"

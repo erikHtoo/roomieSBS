@@ -1,21 +1,16 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "UniMates",
+  "name": "UniMates",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "assets/unimatesLogo.png",
+      "sizes": "366x227",
+      "type": "image/png"
     },
     {
-      "src": "logo192.png",
+      "src": "assets/unimatesLogo.png",
       "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "logo512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "366x227"
     }
   ],
   "start_url": ".",
