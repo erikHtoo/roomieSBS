@@ -160,7 +160,6 @@ const UploadRoom = () => {
           .upload(filePath, file);
 
         if (uploadError) {
-          console.error("Upload failed:", uploadError);
           toast.error(`Failed to upload ${file.name}`);
           setIsSubmitting(false);
           continue;
@@ -205,7 +204,7 @@ const UploadRoom = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!createRes.data.success) {
@@ -236,7 +235,6 @@ const UploadRoom = () => {
 
       navigate("/rooms");
     } catch (err) {
-      console.error(err);
       // Show specific error message from backend if available
       if (err.response?.data?.message) {
         toast.error(err.response.data.message);
@@ -319,7 +317,7 @@ const UploadRoom = () => {
                         >
                           {type}
                         </button>
-                      )
+                      ),
                     )}
                   </div>
                 </div>
@@ -335,7 +333,7 @@ const UploadRoom = () => {
                       value={
                         form.rent
                           ? parseInt(
-                              form.rent.toString().replace(/[^\d]/g, "")
+                              form.rent.toString().replace(/[^\d]/g, ""),
                             ).toLocaleString("en-US")
                           : ""
                       }
@@ -355,7 +353,7 @@ const UploadRoom = () => {
                       value={
                         form.deposit
                           ? parseInt(
-                              form.deposit.toString().replace(/[^\d]/g, "")
+                              form.deposit.toString().replace(/[^\d]/g, ""),
                             ).toLocaleString("en-US")
                           : ""
                       }
@@ -568,7 +566,7 @@ const UploadRoom = () => {
                         onClick={() =>
                           handleChange(
                             "imageUrls",
-                            form.imageUrls.filter((_, idx) => idx !== i)
+                            form.imageUrls.filter((_, idx) => idx !== i),
                           )
                         }
                       >

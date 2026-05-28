@@ -97,7 +97,7 @@ const UploadRoommateProfile = () => {
   const validateStep1 = () => {
     const requiredFields = ["name", "budget", "gender", "preferredLocation"];
     const baseValid = requiredFields.every(
-      (field) => form[field]?.trim() !== ""
+      (field) => form[field]?.trim() !== "",
     );
     if (form.withFriends === "friends") {
       return (
@@ -122,7 +122,7 @@ const UploadRoommateProfile = () => {
   const validateFacebook = () => {
     if (form.facebook && !/^https?:\/\/.+/i.test(form.facebook)) {
       toast.error(
-        "Please enter a valid Facebook link (must start with http or https)."
+        "Please enter a valid Facebook link (must start with http or https).",
       );
       return false;
     }
@@ -170,7 +170,6 @@ const UploadRoommateProfile = () => {
           .upload(filePath, file);
 
         if (uploadError) {
-          console.error("Upload failed:", uploadError);
           toast.error(`Failed to upload ${file.name}`);
           continue;
         }
@@ -223,7 +222,7 @@ const UploadRoommateProfile = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!res.data.success) {
@@ -234,7 +233,6 @@ const UploadRoommateProfile = () => {
       toast.success("Roommate profile created!");
       navigate("/");
     } catch (err) {
-      console.error(err);
       if (err.response?.data?.errors) {
         const first = err.response.data.errors[0];
         toast.error(first?.msg || "Validation failed");
@@ -582,7 +580,7 @@ const UploadRoommateProfile = () => {
                         onClick={() =>
                           handleChange(
                             "imageUrls",
-                            form.imageUrls.filter((_, idx) => idx !== i)
+                            form.imageUrls.filter((_, idx) => idx !== i),
                           )
                         }
                       >
