@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/navbar.jsx";
 import { useAuth } from "../auth/useAuth.js";
 import { FiSearch, FiHome, FiUpload } from "react-icons/fi";
-import { useIsMobile } from "../utils/isMobile.js";
 import {
   FaPaw,
   FaGamepad,
@@ -45,7 +44,6 @@ const parseImageUrls = (val) => {
 const safeText = (value) => String(value ?? "");
 
 export default function HomePage() {
-  const isMobile = useIsMobile();
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

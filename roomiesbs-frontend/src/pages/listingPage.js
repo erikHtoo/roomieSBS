@@ -3,7 +3,6 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar.jsx";
 import { FiHome, FiUpload } from "react-icons/fi";
-import { useIsMobile } from "../utils/isMobile.js";
 import {
   FaParking,
   FaSwimmingPool,
@@ -54,8 +53,6 @@ const normalizeAmenityValue = (amenity) => {
 };
 
 export default function ListingPage() {
-  const isMobile = useIsMobile();
-
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

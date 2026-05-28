@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import DOMPurify from "dompurify";
+import ImageUploadField from "../components/ImageUploadField.jsx";
 import {
   FaPaw,
   FaGamepad,
@@ -16,6 +17,49 @@ import {
   FaHourglassHalf,
   FaInfinity,
 } from "react-icons/fa";
+
+const parseImageUrls = (value) => {
+  if (!value) return [];
+
+  let parsed = value;
+  if (typeof parsed === "string") {
+    for (let i = 0; i < 3; i++) {
+      try {
+        parsed = JSON.parse(parsed);
+      } catch {
+        break;
+      }
+    }
+  }
+
+  const urls = Array.isArray(parsed)
+    ? parsed
+    : typeof parsed === "string"
+      ? [parsed]
+      : [];
+
+  return urls
+    .map((url, index) => {
+      if (!url) return null;
+      if (typeof url === "string") {
+        return {
+          id: `${url}-${index}`,
+          file: null,
+          preview: url,
+        };
+      }
+
+      const preview = url.preview || url.url;
+      if (!preview) return null;
+
+      return {
+        id: url.id || `${preview}-${index}`,
+        file: url.file || null,
+        preview,
+      };
+    })
+    .filter(Boolean);
+};
 
 const EditRoommateProfile = () => {
   const navigate = useNavigate();
@@ -97,7 +141,7 @@ const EditRoommateProfile = () => {
       (f) =>
         form[f] !== undefined &&
         form[f] !== null &&
-        String(form[f]).trim() !== ""
+        String(form[f]).trim() !== "",
     );
 
     if (form.withFriends === "friends") {
@@ -108,7 +152,7 @@ const EditRoommateProfile = () => {
           (f) =>
             typeof f.name === "string" &&
             f.name.trim() !== "" &&
-            (!f.age || String(f.age).trim() !== "")
+            (!f.age || String(f.age).trim() !== ""),
         )
       );
     }
@@ -148,7 +192,7 @@ const EditRoommateProfile = () => {
           `${process.env.REACT_APP_API_URL}/roommates`,
           {
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
 
         const p = res.data.profile;
@@ -213,16 +257,7 @@ const EditRoommateProfile = () => {
           zalo: JSON.parse(p.person_contact || "{}")?.zalo || "",
           facebook: JSON.parse(p.person_contact || "{}")?.facebook || "",
           viber: JSON.parse(p.person_contact || "{}")?.viber || "",
-          imageUrls: (() => {
-            try {
-              const urls = JSON.parse(p.person_image_urls || "[]");
-              return Array.isArray(urls)
-                ? urls.map((url) => ({ url, file: null }))
-                : [];
-            } catch {
-              return [];
-            }
-          })(),
+          imageUrls: parseImageUrls(p.person_image_urls),
         });
       } catch (err) {
         console.error(err);
@@ -244,9 +279,10 @@ const EditRoommateProfile = () => {
       }
 
       const uploadedUrls = [];
-      for (const img of form.imageUrls) {
+      for (let i = 0; i < form.imageUrls.length; i++) {
+        const img = form.imageUrls[i];
         if (img.file) {
-          const path = `${userId}/${Date.now()}-${slugify(img.file.name)}`;
+          const path = `${userId}/${Date.now()}-${i}-${slugify(img.file.name)}`;
           const { error: uploadError } = await supabase.storage
             .from("roommate-images")
             .upload(path, img.file);
@@ -255,8 +291,8 @@ const EditRoommateProfile = () => {
             .from("roommate-images")
             .getPublicUrl(path);
           uploadedUrls.push(pub.publicUrl);
-        } else {
-          uploadedUrls.push(img.url);
+        } else if (img.preview || img.url) {
+          uploadedUrls.push(img.preview || img.url);
         }
       }
 
@@ -309,8 +345,6 @@ const EditRoommateProfile = () => {
       }
       // If no traits, don't include person_traits in payload at all
 
-      console.log("Sending payload:", JSON.stringify(payload, null, 2));
-
       const res = await axios.put(
         `${process.env.REACT_APP_API_URL}/roommates`,
         payload,
@@ -319,7 +353,7 @@ const EditRoommateProfile = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!res.data.success) {
@@ -330,34 +364,12 @@ const EditRoommateProfile = () => {
       toast.success("Profile updated successfully!");
       navigate("/");
     } catch (err) {
-      console.error("Full error:", err);
-      console.error("Response data:", err.response?.data);
-      console.error("Errors array:", err.response?.data?.errors);
       const errorMsg =
         err.response?.data?.errors?.[0]?.msg ||
         err.response?.data?.error ||
         "Update failed. Please check your inputs.";
       toast.error(errorMsg);
     }
-  };
-
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    const newFiles = files.map((f) => ({
-      file: f,
-      url: URL.createObjectURL(f),
-    }));
-    setForm((prev) => ({
-      ...prev,
-      imageUrls: [...prev.imageUrls, ...newFiles],
-    }));
-  };
-
-  const removeImage = (i) => {
-    setForm((prev) => ({
-      ...prev,
-      imageUrls: prev.imageUrls.filter((_, idx) => idx !== i),
-    }));
   };
 
   const traitIcons = [
@@ -641,49 +653,19 @@ const EditRoommateProfile = () => {
             {/* STEP 3 */}
             {step === 3 && (
               <div className="space-y-8">
-                <h2 className="font-medium text-gray-700 mb-2">
-                  Update Images
-                </h2>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {form.imageUrls.map((img, i) => (
-                    <div
-                      key={i}
-                      className="relative rounded-lg overflow-hidden border bg-gray-100 h-32"
-                    >
-                      <img
-                        src={img.url}
-                        alt="Preview"
-                        className="object-cover w-full h-full"
-                      />
-                      <button
-                        type="button"
-                        className="absolute top-1 right-1 bg-black text-white rounded-full w-6 h-6"
-                        onClick={() => removeImage(i)}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  {form.imageUrls.length < 12 && (
-                    <div
-                      onClick={() =>
-                        document.getElementById("imageUpload").click()
-                      }
-                      className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-32 cursor-pointer text-gray-400 text-4xl hover:border-blue-500 hover:text-blue-500"
-                    >
-                      +
-                    </div>
-                  )}
-                </div>
-
-                <input
-                  id="imageUpload"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
+                <ImageUploadField
+                  label="Photos"
+                  images={form.imageUrls}
+                  setImages={(updater) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      imageUrls:
+                        typeof updater === "function"
+                          ? updater(prev.imageUrls)
+                          : updater,
+                    }))
+                  }
+                  maxImages={12}
                 />
 
                 <div className="flex justify-between">

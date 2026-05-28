@@ -116,7 +116,7 @@ const RoomPage = () => {
               <img
                 src={images[0]}
                 alt="main-room"
-                className="w-full h-64 sm:h-[450px] md:h-[550px] lg:h-[600px] object-cover rounded-xl"
+                 className="w-full h-64 sm:h-[450px] md:h-[550px] object-cover rounded-xl"
                 loading="lazy"
                 onClick={() => setSelectedIndex(0)}
               />

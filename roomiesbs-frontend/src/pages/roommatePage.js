@@ -61,9 +61,8 @@ const RoommatePage = () => {
   const [roommate, setRoommate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showFriends, setShowFriends] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const { user, session } = useAuth();
+  const { session } = useAuth();
 
   useEffect(() => {
     const fetchRoommate = async () => {
@@ -158,13 +157,7 @@ const RoommatePage = () => {
     ? new Date(created_at).toLocaleDateString()
     : "N/A";
 
-  const openImage = (url, index) => {
-    setSelectedImage(url);
-    setSelectedIndex(index);
-  };
-
   const closeModal = () => {
-    setSelectedImage(null);
     setSelectedIndex(null);
   };
 
@@ -172,16 +165,12 @@ const RoommatePage = () => {
     e.stopPropagation();
     if (images.length === 0) return;
     setSelectedIndex((prev) => (prev + 1) % images.length);
-    setSelectedImage(images[(selectedIndex + 1) % images.length]);
   };
 
   const showPrev = (e) => {
     e.stopPropagation();
     if (images.length === 0) return;
     setSelectedIndex((prev) => (prev - 1 + images.length) % images.length);
-    setSelectedImage(
-      images[(selectedIndex - 1 + images.length) % images.length],
-    );
   };
 
   const traitIcons = {

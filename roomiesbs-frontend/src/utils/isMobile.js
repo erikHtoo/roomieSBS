@@ -9,5 +9,5 @@ export function useIsMobile(maxWidth = 640) {
     return () => window.removeEventListener("resize", handler);
   }, [maxWidth]);
 
-  return useIsMobile;
+  return isMobile;
 }

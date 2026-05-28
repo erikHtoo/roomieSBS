@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import DOMPurify from "dompurify";
+import ImageUploadField from "../components/ImageUploadField.jsx";
 import {
   FaPaw,
   FaGamepad,
@@ -149,6 +150,7 @@ const UploadRoommateProfile = () => {
         viber,
         imageUrls,
       } = form;
+      const imageFiles = imageUrls.map((image) => image.file);
 
       const { data } = await supabase.auth.getSession();
       const token = data?.session?.access_token;
@@ -162,8 +164,8 @@ const UploadRoommateProfile = () => {
       const createdAt = new Date().toISOString();
       const uploadedUrls = [];
 
-      for (let i = 0; i < imageUrls.length; i++) {
-        const file = imageUrls[i];
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
         const filePath = `${userId}/${createdAt}-${i}-${slugify(file.name)}`;
         const { error: uploadError } = await supabase.storage
           .from("roommate-images")
@@ -559,60 +561,19 @@ const UploadRoommateProfile = () => {
             {/* STEP 3 */}
             {step === 3 && (
               <div className="space-y-8">
-                <h2 className="font-medium text-gray-700 mb-2">
-                  Upload Images
-                </h2>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {form.imageUrls.map((file, i) => (
-                    <div
-                      key={i}
-                      className="relative rounded-lg overflow-hidden border bg-gray-100 h-32"
-                    >
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt="Preview"
-                        className="object-cover w-full h-full"
-                      />
-                      <button
-                        type="button"
-                        className="absolute top-1 right-1 bg-black text-white rounded-full w-6 h-6"
-                        onClick={() =>
-                          handleChange(
-                            "imageUrls",
-                            form.imageUrls.filter((_, idx) => idx !== i),
-                          )
-                        }
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-
-                  {form.imageUrls.length < 12 && (
-                    <div
-                      onClick={() =>
-                        document.getElementById("imageUpload").click()
-                      }
-                      className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-32 cursor-pointer text-gray-400 text-4xl hover:border-blue-500 hover:text-blue-500"
-                    >
-                      +
-                    </div>
-                  )}
-                </div>
-
-                <input
-                  id="imageUpload"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) =>
-                    handleChange("imageUrls", [
-                      ...form.imageUrls,
-                      ...Array.from(e.target.files),
-                    ])
+                <ImageUploadField
+                  label="Photos"
+                  images={form.imageUrls}
+                  setImages={(updater) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      imageUrls:
+                        typeof updater === "function"
+                          ? updater(prev.imageUrls)
+                          : updater,
+                    }))
                   }
-                  className="hidden"
+                  maxImages={12}
                 />
 
                 <div className="flex justify-between">

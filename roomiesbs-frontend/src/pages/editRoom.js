@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import DOMPurify from "dompurify";
+import ImageUploadField from "../components/ImageUploadField.jsx";
 import {
   FaParking,
   FaSwimmingPool,
@@ -35,8 +36,7 @@ const EditRoom = () => {
     zalo: "",
     facebook: "",
     viber: "",
-    imageUrls: [], // will hold existing URLs
-    newImages: [], // new files selected by user
+    imageUrls: [],
   });
 
   const handleNext = () => setStep((prev) => Math.min(prev + 1, 3));
@@ -75,7 +75,7 @@ const EditRoom = () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
         const r = roomData.room;
 
@@ -105,9 +105,16 @@ const EditRoom = () => {
           facebook: r.contact?.facebook || "",
           viber: r.contact?.viber || "",
           imageUrls: Array.isArray(r.image_urls)
-            ? r.image_urls
-            : JSON.parse(r.image_urls || "[]"),
-          newImages: [],
+            ? r.image_urls.map((url, index) => ({
+                id: `${url}-${index}`,
+                file: null,
+                preview: url,
+              }))
+            : JSON.parse(r.image_urls || "[]").map((url, index) => ({
+                id: `${url}-${index}`,
+                file: null,
+                preview: url,
+              })),
         });
       } catch (err) {
         console.error(err);
@@ -145,7 +152,6 @@ const EditRoom = () => {
         facebook,
         viber,
         imageUrls,
-        newImages,
       } = form;
 
       const { data } = await supabase.auth.getSession();
@@ -157,30 +163,31 @@ const EditRoom = () => {
         return;
       }
 
-      // Upload new images (if any)
-      const uploadedUrls = [];
       const createdAt = new Date().toISOString();
+      const finalImageUrls = [];
 
-      for (let i = 0; i < newImages.length; i++) {
-        const file = newImages[i];
-        const filePath = `${ownerId}/${createdAt}-${i}-${slugify(file.name)}`;
-        const { error: uploadError } = await supabase.storage
-          .from("room-images")
-          .upload(filePath, file);
+      for (let i = 0; i < imageUrls.length; i++) {
+        const image = imageUrls[i];
+        if (image.file) {
+          const filePath = `${ownerId}/${createdAt}-${i}-${slugify(image.file.name)}`;
+          const { error: uploadError } = await supabase.storage
+            .from("room-images")
+            .upload(filePath, image.file);
 
-        if (uploadError) {
-          toast.error(`Failed to upload ${file.name}`);
-          continue;
+          if (uploadError) {
+            toast.error(`Failed to upload ${image.file.name}`);
+            continue;
+          }
+
+          const { data: publicUrlData } = supabase.storage
+            .from("room-images")
+            .getPublicUrl(filePath);
+
+          finalImageUrls.push(publicUrlData.publicUrl);
+        } else if (image.preview || image.url) {
+          finalImageUrls.push(image.preview || image.url);
         }
-
-        const { data: publicUrlData } = supabase.storage
-          .from("room-images")
-          .getPublicUrl(filePath);
-
-        uploadedUrls.push(publicUrlData.publicUrl);
       }
-
-      const finalImageUrls = [...imageUrls, ...uploadedUrls];
 
       const amenitiesArray = Array.isArray(amenities)
         ? amenities
@@ -222,7 +229,7 @@ const EditRoom = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!updateRes.data.success) {
@@ -245,12 +252,6 @@ const EditRoom = () => {
       }
     }
   };
-
-  const handleDeleteImage = (url) =>
-    setForm((prev) => ({
-      ...prev,
-      imageUrls: prev.imageUrls.filter((u) => u !== url),
-    }));
 
   const pageTransition = {
     initial: { opacity: 0, x: 40 },
@@ -325,7 +326,7 @@ const EditRoom = () => {
                         >
                           {type}
                         </button>
-                      )
+                      ),
                     )}
                   </div>
                 </div>
@@ -341,7 +342,7 @@ const EditRoom = () => {
                       value={
                         form.rent
                           ? parseInt(
-                              form.rent.toString().replace(/[^\d]/g, "")
+                              form.rent.toString().replace(/[^\d]/g, ""),
                             ).toLocaleString("en-US")
                           : ""
                       }
@@ -361,7 +362,7 @@ const EditRoom = () => {
                       value={
                         form.deposit
                           ? parseInt(
-                              form.deposit.toString().replace(/[^\d]/g, "")
+                              form.deposit.toString().replace(/[^\d]/g, ""),
                             ).toLocaleString("en-US")
                           : ""
                       }
@@ -500,45 +501,20 @@ const EditRoom = () => {
 
             {step === 3 && (
               <div className="space-y-8">
-                <div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {form.imageUrls.map((url, i) => (
-                      <div key={i} className="relative">
-                        <img
-                          src={url}
-                          alt="Room"
-                          className="rounded-lg border object-cover h-32 w-full"
-                        />
-                        <button
-                          className="absolute top-1 right-1 bg-black text-white rounded-full w-6 h-6"
-                          onClick={() => handleDeleteImage(url)}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h2 className="font-medium text-gray-700 mb-2">
-                    Add More Images
-                  </h2>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={(e) =>
-                      handleChange("newImages", Array.from(e.target.files))
-                    }
-                    className="w-full border rounded-lg p-3"
-                  />
-                  {form.newImages.length > 0 && (
-                    <div className="mt-2 text-sm text-gray-500">
-                      {form.newImages.length} new image(s) selected
-                    </div>
-                  )}
-                </div>
+                <ImageUploadField
+                  label="Photos"
+                  images={form.imageUrls}
+                  setImages={(updater) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      imageUrls:
+                        typeof updater === "function"
+                          ? updater(prev.imageUrls)
+                          : updater,
+                    }))
+                  }
+                  maxImages={12}
+                />
 
                 <div className="flex justify-between">
                   <button
