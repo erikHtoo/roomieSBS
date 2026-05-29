@@ -1,8 +1,8 @@
 # UniMates (roomieSBS)
 
-Live site: https://unimates.sbs/
-
 [![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/) [![Node](https://img.shields.io/badge/Node.js-%3E=16-brightgreen)](https://nodejs.org/) [![Supabase](https://img.shields.io/badge/Supabase-Postgres-4ea94b)](https://supabase.com/)
+
+### Live site: https://unimates.sbs/
 
 ## Project Overview
 
