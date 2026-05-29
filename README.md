@@ -105,6 +105,12 @@ npm run build
 - Backend server: [roomieSBS-backend/server.js](roomieSBS-backend/server.js)
 - Backend Supabase server client: [roomieSBS-backend/supabaseClient.js](roomieSBS-backend/supabaseClient.js)
 
+## Cool Technical Stuff I learnt while developing this
+
+- `src/utils/cropImage.js` resolves remote images by fetching them as blobs and creating object URLs, and sets `image.crossOrigin = 'anonymous'` before drawing to canvas. This prevents canvas "tainted" SecurityError
+- text inputs are sanitized using `DOMPurify` before sending to backend; server-side also uses `sanitize-html` and `express-validator` for request validation.
+- Tailwind CSS with a small custom animation in `tailwind.config.js`, framer-motion transitions, responsive layout patterns.
+  
 ## License
 
 This project is licensed under the PolyForm Noncommercial License 1.0.0.
@@ -115,8 +121,3 @@ Summary: Permitted uses include personal use, research, experimentation, and con
 
 Commercial use is prohibited without explicit permission from the copyright holder.
 
-## Cool Technical Stuff I learnt while developing this
-
-- `src/utils/cropImage.js` resolves remote images by fetching them as blobs and creating object URLs, and sets `image.crossOrigin = 'anonymous'` before drawing to canvas. This prevents canvas "tainted" SecurityError
-- text inputs are sanitized using `DOMPurify` before sending to backend; server-side also uses `sanitize-html` and `express-validator` for request validation.
-- Tailwind CSS with a small custom animation in `tailwind.config.js`, framer-motion transitions, responsive layout patterns.
