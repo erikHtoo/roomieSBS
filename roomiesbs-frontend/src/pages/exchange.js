@@ -43,7 +43,7 @@ export default function Exchange() {
           </h2>
         </div>
 
-        {/* 3️⃣ Contact Section */}
+        {/* Contact Section */}
         <section className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
           <h2 className="text-xl font-semibold text-gray-800 text-center mb-6">
             Contact
@@ -99,7 +99,7 @@ export default function Exchange() {
           </div>
         </section>
 
-        {/* 2️⃣ Payment Section */}
+        {/* Payment Section */}
         <section className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
           <h2 className="text-xl font-semibold text-gray-800 mb-6 text-center">
             Available Payments

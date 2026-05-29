@@ -114,7 +114,7 @@ const RoommatePage = () => {
     );
   }
 
-  // ✅ Extract all data safely
+  // Extract all data safely
   const {
     person_name = "Unknown",
     person_gender = "N/A",
@@ -128,7 +128,7 @@ const RoommatePage = () => {
     person_image_urls,
   } = roommate;
 
-  // ✅ Safely parse JSON fields
+  // Safely parse JSON fields
   const contact =
     typeof person_contact === "string"
       ? JSON.parse(person_contact || "{}")

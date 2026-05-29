@@ -233,23 +233,45 @@ export default function HomePage() {
     "Long Term": <FaInfinity className="text-blue-400" />,
   };
 
+  const activeProfilesCount = profiles.filter((profile) => {
+    return (
+      profile.person_active === undefined ||
+      profile.person_active === null ||
+      profile.person_active === true ||
+      profile.person_active === "true"
+    );
+  }).length;
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="max-w-4xl mx-auto px-6 mt-10 mb-8 text-center space-y-3">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-700">
-          Find your SBS Roommate
+      <section className="max-w-4xl mx-auto px-6 mt-10 mb-8 text-center space-y-0">
+        <p className="text-xs sm:text-sm font-semibold tracking-[0.28em] uppercase text-pink-500">
+          Student housing made easy
+        </p>
+
+        <h1 className="text-xl sm:text-3xl font-semibold text-gray-900 tracking-tight mb-1"
+        style={{ marginTop: "16px"}}>
+          Find your roommate — or create profile
         </h1>
 
-        <div className="flex items-center justify-center gap-3 mt-4">
+        <p
+          className="mx-auto max-w-2xl text-sm sm:text-base text-gray-600"
+          style={{ marginTop: "8px", marginBottom: "24px" }}
+        >
+          Look for roommates that fit your vibes or create your own profile to
+          let people find you.
+        </p>
+
+        <div className="flex items-center justify-center gap-3 mt-2">
           <Link
             to={hasProfile ? "/edit-profile" : "/create-profile"}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
           >
             <FiUpload size={18} />
-            Roommate Profile
+            Upload Profile
           </Link>
 
           <Link
@@ -260,6 +282,13 @@ export default function HomePage() {
             Look at Rooms
           </Link>
         </div>
+
+        {/* <p
+          className="text-sm sm:text-base text-gray-500"
+          style={{ marginTop: "8px", marginBottom: "0px" }}
+        >
+          No fees · {activeProfilesCount.toLocaleString()} people looking in HCMC
+        </p> */}
       </section>
 
       {/* Gradient Separator */}

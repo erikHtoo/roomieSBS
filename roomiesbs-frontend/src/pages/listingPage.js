@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar.jsx";
-import { FiHome, FiUpload } from "react-icons/fi";
+import { FiUser, FiUpload } from "react-icons/fi";
 import {
   FaParking,
   FaSwimmingPool,
@@ -151,12 +151,27 @@ export default function ListingPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="max-w-4xl mx-auto px-6 mt-10 mb-8 text-center space-y-3">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-700">
-          Find your Cozy Room
+      <section className="max-w-4xl mx-auto px-6 mt-10 mb-8 text-center space-y-0">
+        <p className="text-xs sm:text-sm font-semibold tracking-[0.28em] uppercase text-pink-500">
+          Student housing made easy
+        </p>
+
+        <h1
+          className="text-xl sm:text-3xl font-semibold text-gray-900 tracking-tight mb-1"
+          style={{ marginTop: "16px" }}
+        >
+          Find your next room — or pass yours on
         </h1>
 
-        <div className="flex items-center justify-center gap-3 mt-4">
+        <p
+          className="mx-auto max-w-2xl text-sm sm:text-base text-gray-600"
+          style={{ marginTop: "8px", marginBottom: "24px" }}
+        >
+          Browse available rooms near your uni, or transfer your contract to
+          another student.
+        </p>
+
+        <div className="flex items-center justify-center gap-3 mt-2">
           <Link
             to="/upload"
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
@@ -169,10 +184,17 @@ export default function ListingPage() {
             to="/"
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow hover:opacity-90 transition"
           >
-            <FiHome size={18} />
+            <FiUser size={18} />
             Find Roommates
           </Link>
         </div>
+
+        {/* <p
+          className="text-sm sm:text-base text-gray-500"
+          style={{ marginTop: "8px", marginBottom: "0px" }}
+        >
+          No fees · {rooms.length.toLocaleString()} listings in HCMC
+        </p> */}
       </section>
 
       {/* Gradient Separator */}

@@ -62,7 +62,7 @@ const EditRoom = () => {
       .replace(/\s+/g, "-")
       .replace(/[^a-z0-9\-_.]/g, "");
 
-  // ✅ Load room data on mount
+  // Load room data on mount
   useEffect(() => {
     const loadRoom = async () => {
       try {

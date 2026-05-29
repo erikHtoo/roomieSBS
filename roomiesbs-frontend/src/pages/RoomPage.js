@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/navbar";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import {
   FaBed,
@@ -22,6 +22,7 @@ const RoomPage = () => {
   const [room, setRoom] = useState(null);
   const [images, setImages] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
+  const [roomCount, setRoomCount] = useState(0);
 
   useEffect(() => {
     const fetchRoom = async () => {
@@ -35,7 +36,18 @@ const RoomPage = () => {
         console.error("Failed to fetch room:", err);
       }
     };
+
+    const fetchRoomCount = async () => {
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/rooms`);
+        setRoomCount(Array.isArray(res.data.rooms) ? res.data.rooms.length : 0);
+      } catch (err) {
+        console.error("Failed to fetch room count:", err);
+      }
+    };
+
     fetchRoom();
+    fetchRoomCount();
   }, [id]);
 
   if (!room)
@@ -109,14 +121,15 @@ const RoomPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="w-full max-w-5xl mx-auto"
-        >
+        > 
+
           {/* Image */}
           {images.length > 0 && (
             <div className="relative mb-8">
               <img
                 src={images[0]}
                 alt="main-room"
-                 className="w-full h-64 sm:h-[450px] md:h-[550px] object-cover rounded-xl"
+                className="w-full h-64 sm:h-[450px] md:h-[550px] object-cover rounded-xl"
                 loading="lazy"
                 onClick={() => setSelectedIndex(0)}
               />

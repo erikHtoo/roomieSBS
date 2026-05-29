@@ -123,7 +123,7 @@ const UploadRoom = () => {
       } = form;
       const imageFiles = imageUrls.map((image) => image.file);
 
-      // 1️⃣ Get current user + token
+      // Get current user + token
       const { data } = await supabase.auth.getSession();
       const token = data?.session?.access_token;
       const ownerId = data?.session?.user?.id;
@@ -134,10 +134,10 @@ const UploadRoom = () => {
         return;
       }
 
-      // 2️⃣ Generate timestamp for grouping image uploads
+      // Generate timestamp for grouping image uploads
       const createdAt = new Date().toISOString();
 
-      // 3️⃣ Upload images first (using ownerId + createdAt)
+      // Upload images first (using ownerId + createdAt)
       const uploadedUrls = [];
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
@@ -160,7 +160,7 @@ const UploadRoom = () => {
         uploadedUrls.push(publicUrlData.publicUrl);
       }
 
-      // 4️⃣ Create room (with image URLs)
+      // Create room (with image URLs)
       const payload = {
         description: DOMPurify.sanitize(about),
         rent: parseFloat(rent) || "",
@@ -202,7 +202,7 @@ const UploadRoom = () => {
 
       toast.success("Room uploaded successfully!");
 
-      // 5️⃣ Reset + redirect
+      // Reset + redirect
       setForm({
         address: "",
         rent: "",
