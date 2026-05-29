@@ -97,14 +97,6 @@ npm run build
   - `routes/` — Route handlers (`rooms.js`, `roommateProfiles.js`, `exchange.js`)
   - `supabaseClient.js` — Supabase server client (service role key)
 
-## Future Improvements
-
-- Add end-to-end and unit tests (Jest / React Testing Library coverage for core components and server routes).
-- Migrate to a modern framework like Next.js for improved SSR/SEO for public listing pages and route-based performance benefits.
-- Add CI with GitHub Actions to run linting, tests, and build artifacts before merging.
-- Add image optimization at upload-time (server-side resizing / thumbnails) to reduce client payloads and CDN costs.
-- Add feature flags and AB testing (Vercel / LaunchDarkly) for controlled UX experiments.
-
 ## References (key files)
 
 - Frontend entry and key components: [roomiesbs-frontend/src/components/ImageUploadField.jsx](roomiesbs-frontend/src/components/ImageUploadField.jsx)
