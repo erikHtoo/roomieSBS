@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/navbar";
 import axios from "axios";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import {
   FaBed,
@@ -121,8 +121,7 @@ const RoomPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="w-full max-w-5xl mx-auto"
-        > 
-
+        >
           {/* Image */}
           {images.length > 0 && (
             <div className="relative mb-8">
@@ -254,23 +253,14 @@ const RoomPage = () => {
               <h3 className="text-2xl font-semibold text-gray-900 mb-3">
                 Address
               </h3>
-              <a
-                href={
-                  room.address.startsWith("http")
-                    ? room.address
-                    : `https://${room.address}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 text-gray-700 hover:text-gray-900 transition"
-              >
-                <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 shadow-sm transition">
+              <div className="flex items-center gap-3 text-gray-700">
+                <div className="w-12 h-12 flex shrink-0 items-center justify-center rounded-lg bg-gray-100 shadow-sm">
                   <FaMapMarkerAlt className="text-red-500 text-xl" />
                 </div>
-                <span className="text-lg underline text-blue-600 break-all">
-                  View on Google Maps
+                <span className="text-lg leading-relaxed break-words">
+                  {room.address || "Address not provided."}
                 </span>
-              </a>
+              </div>
             </div>
           </div>
         </motion.div>
