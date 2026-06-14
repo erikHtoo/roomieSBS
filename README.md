@@ -79,13 +79,7 @@ cd roomiesbs-frontend
 npm run build
 ```
 
-## Usage
-
-- Visit `http://localhost:3000` to open the React app.
-- Use the multi-step upload flows (UploadRoom / UploadRoommate) to test the image upload, cropping, and reorder features.
-- Backend health check: `GET /health` returns status for uptime monitors (configured in `roomieSBS-backend/server.js`).
-
-## Folder Structure (high level)
+## Folder Structure
 
 - `roomiesbs-frontend/`
   - `src/pages/` — Page-level React components (UploadRoom, EditRoom, RoomPage, roommatePage, profile, etc.)
@@ -96,20 +90,6 @@ npm run build
   - `server.js` — Express app setup and middleware
   - `routes/` — Route handlers (`rooms.js`, `roommateProfiles.js`, `exchange.js`)
   - `supabaseClient.js` — Supabase server client (service role key)
-
-## References (key files)
-
-- Frontend entry and key components: [roomiesbs-frontend/src/components/ImageUploadField.jsx](roomiesbs-frontend/src/components/ImageUploadField.jsx)
-- Crop helper that avoids canvas taint: [roomiesbs-frontend/src/utils/cropImage.js](roomiesbs-frontend/src/utils/cropImage.js)
-- Frontend Supabase client: [roomiesbs-frontend/src/supabaseClient.js](roomiesbs-frontend/src/supabaseClient.js)
-- Backend server: [roomieSBS-backend/server.js](roomieSBS-backend/server.js)
-- Backend Supabase server client: [roomieSBS-backend/supabaseClient.js](roomieSBS-backend/supabaseClient.js)
-
-## Cool Technical Stuff I learnt while developing this
-
-- `src/utils/cropImage.js` resolves remote images by fetching them as blobs and creating object URLs, and sets `image.crossOrigin = 'anonymous'` before drawing to canvas. This prevents canvas "tainted" SecurityError
-- text inputs are sanitized using `DOMPurify` before sending to backend; server-side also uses `sanitize-html` and `express-validator` for request validation.
-- Tailwind CSS with a small custom animation in `tailwind.config.js`, framer-motion transitions, responsive layout patterns.
   
 ## License
 
