@@ -73,7 +73,7 @@ export default function ListingPage() {
         setRooms(res.data.rooms || []);
       } catch (err) {
         console.error(err);
-        setError("Failed to load rooms");
+        setError("Rooms are temporarily unavailable. Please try again shortly.");
       } finally {
         setLoading(false);
       }
@@ -147,65 +147,49 @@ export default function ListingPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-slate-50">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="max-w-4xl mx-auto px-6 mt-10 mb-8 text-center space-y-0">
-        <p className="text-xs sm:text-sm font-semibold tracking-[0.28em] uppercase text-pink-500">
-          Student housing made easy
+      <section className="mx-auto max-w-7xl px-6 py-10 sm:py-14">
+        <p className="text-xs font-semibold tracking-[0.18em] uppercase text-rose-700">
+          Room directory
         </p>
 
-        <h1
-          className="text-xl sm:text-3xl font-semibold text-gray-900 tracking-tight mb-1"
-          style={{ marginTop: "16px" }}
-        >
-          Find your next room — or pass yours on
+        <h1 className="mt-3 max-w-3xl text-3xl sm:text-5xl font-semibold text-slate-950 tracking-tight leading-tight">
+          A clearer way to find your next room.
         </h1>
 
-        <p
-          className="mx-auto max-w-2xl text-sm sm:text-base text-gray-600"
-          style={{ marginTop: "8px", marginBottom: "24px" }}
-        >
-          Browse available rooms near your uni, or transfer your contract to
-          another student.
+        <p className="mt-4 max-w-2xl text-base sm:text-lg leading-7 text-slate-600">
+          Browse student-posted rooms and contract transfers, with the practical details up front.
         </p>
 
-        <div className="flex items-center justify-center gap-3 mt-2">
+        <div className="mt-7 flex flex-wrap items-center gap-3">
           <Link
             to="/upload"
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold shadow hover:opacity-90 transition"
+            className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
           >
             <FiUpload size={18} />
-            Upload Room
+            Post a room
           </Link>
 
           <Link
             to="/"
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow hover:opacity-90 transition"
+            className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition"
           >
             <FiUser size={18} />
-            Find Roommates
+            Browse roommates
           </Link>
         </div>
-
-        {/* <p
-          className="text-sm sm:text-base text-gray-500"
-          style={{ marginTop: "8px", marginBottom: "0px" }}
-        >
-          No fees · {rooms.length.toLocaleString()} listings in HCMC
-        </p> */}
       </section>
 
-      {/* Gradient Separator */}
-      <div className="w-full h-[2px] bg-gradient-to-r from-transparent via-gray-300 to-transparent mb-8" />
+      <div className="border-t border-slate-200" />
 
       {/* Filter Controls (responsive) */}
-      <div className="mb-6">
+      <div className="py-6">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           {/* Rent bubble - full width on mobile, compact on desktop */}
           <div className="w-full sm:w-[340px]">
-            <div className="flex items-center gap-3 bg-white/80 backdrop-blur-md px-4 sm:px-5 py-2.5 rounded-xl border border-gray-200 shadow-sm h-[46px] w-full">
+            <div className="flex items-center gap-3 bg-white px-4 sm:px-5 py-2.5 rounded-lg border border-slate-300 h-[46px] w-full">
               <span className="text-gray-700 text-sm font-medium">Rent</span>
               <input
                 type="number"
@@ -235,7 +219,7 @@ export default function ListingPage() {
                   setTempMinRent(minRent);
                   setTempMaxRent(maxRent);
                 }}
-                className="flex items-center gap-2 cursor-pointer text-gray-700 text-sm font-medium bg-white/80 backdrop-blur-md border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm hover:bg-white/90 transition h-[46px] w-full sm:w-auto"
+                className="flex items-center gap-2 cursor-pointer text-slate-700 text-sm font-medium bg-white border border-slate-300 rounded-lg px-4 py-2.5 hover:border-slate-400 transition h-[46px] w-full sm:w-auto"
               >
                 <span>Filters</span>
                 <svg
@@ -302,7 +286,7 @@ export default function ListingPage() {
                   </button>
 
                   <button
-                    className="px-6 py-2 bg-pink-400 text-white font-semibold rounded-lg hover:bg-pink-500 transition text-base w-full sm:w-auto"
+                    className="px-6 py-2 bg-slate-900 text-white font-semibold rounded-lg hover:bg-slate-800 transition text-sm w-full sm:w-auto"
                     onClick={() => {
                       setSelectedAmenities(tempSelectedAmenities);
                       setMinRent(tempMinRent);
@@ -325,12 +309,12 @@ export default function ListingPage() {
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <main className="max-w-7xl mx-auto px-6 pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading &&
           Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
 
         {!loading && error && (
-          <p className="col-span-full text-center text-red-500">{error}</p>
+          <div role="alert" className="col-span-full rounded-lg border border-amber-200 bg-amber-50 px-4 py-5 text-sm text-amber-900">{error}</div>
         )}
 
         {!loading &&
@@ -361,14 +345,14 @@ export default function ListingPage() {
               <Link
                 key={room.room_id}
                 to={`/room/${room.room_id}`}
-                className="group relative bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-rose-300"
+                className="group relative bg-white rounded-xl overflow-hidden transition border border-slate-200 hover:border-slate-400"
               >
                 {/* Image Section */}
                 <div className="relative h-48 sm:h-56 md:h-64 w-full overflow-hidden">
                   <img
                     src={firstImage}
                     alt="Room"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    className="w-full h-full object-cover"
                     loading="lazy"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
@@ -379,7 +363,7 @@ export default function ListingPage() {
 
                   {/* Bottom bar */}
                   <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                    <span className="px-3 py-1.5 bg-rose-500/90 text-white text-sm font-semibold rounded-full shadow-md">
+                    <span className="px-2.5 py-1.5 bg-white text-slate-950 text-sm font-semibold rounded-md">
                       {room.rent
                         ? `${parseInt(room.rent).toLocaleString("en-US")} ₫`
                         : "—"}

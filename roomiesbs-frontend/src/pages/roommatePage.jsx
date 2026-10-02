@@ -4,6 +4,7 @@ import Navbar from "../components/navbar";
 import axios from "axios";
 import { useAuth } from "../auth/useAuth.js";
 import { useParams } from "react-router-dom";
+import { safeFacebookUrl } from "../utils/contactLinks";
 import {
   FaFacebook,
   FaPhoneAlt,
@@ -69,6 +70,7 @@ const RoommatePage = () => {
       try {
         const res = await axios.get(
           `${process.env.REACT_APP_API_URL}/roommates/${id}`,
+          { headers: { Authorization: `Bearer ${session.access_token}` } },
         );
         setRoommate(res.data.profile);
       } catch (err) {
@@ -77,8 +79,8 @@ const RoommatePage = () => {
         setLoading(false);
       }
     };
-    fetchRoommate();
-  }, [id]);
+    if (session?.access_token) fetchRoommate();
+  }, [id, session]);
 
   if (loading)
     return (
@@ -129,10 +131,15 @@ const RoommatePage = () => {
   } = roommate;
 
   // Safely parse JSON fields
-  const contact =
-    typeof person_contact === "string"
-      ? JSON.parse(person_contact || "{}")
-      : person_contact || {};
+  const contact = (() => {
+    if (typeof person_contact !== "string") return person_contact || {};
+    try {
+      return JSON.parse(person_contact || "{}");
+    } catch {
+      return {};
+    }
+  })();
+  const facebookUrl = safeFacebookUrl(contact?.facebook);
 
   const formatPrice = (value) => {
     if (value === null || value === undefined || value === "") return "-";
@@ -319,15 +326,11 @@ const RoommatePage = () => {
               Contact
             </h3>
             <div className="space-y-3 text-gray-700">
-              {contact?.facebook && (
+              {facebookUrl && (
                 <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-100 px-3 py-2 rounded-lg transition">
                   <FaFacebook className="text-blue-600 text-xl" />
                   <a
-                    href={
-                      contact.facebook.startsWith("http")
-                        ? contact.facebook
-                        : `https://${contact.facebook}`
-                    }
+                    href={facebookUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-700 font-medium underline"

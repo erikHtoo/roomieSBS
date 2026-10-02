@@ -1,24 +1,51 @@
 const supabase = require('../supabaseClient');
 
 async function verifyAuth(req, res, next) {
-    try {
+  try {
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: "No token provided" });
+    const [scheme, token] = (authHeader || "").split(" ");
+
+    if (scheme !== "Bearer" || !token) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required",
+      });
     }
 
-    const token = authHeader.split(" ")[1];
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
-        return res.status(401).json({ error: "Invalid or expired token" });
+      return res.status(401).json({
+        success: false,
+        error: "Invalid or expired session",
+      });
     }
 
-    req.user = user; // later use
+    if (!user.email_confirmed_at) {
+      return res.status(403).json({
+        success: false,
+        error: "Confirm your school email before continuing",
+      });
+    }
+
+    const allowedDomains = (process.env.ALLOWED_EMAIL_DOMAINS || "")
+      .split(",")
+      .map((domain) => domain.trim().toLowerCase())
+      .filter(Boolean);
+    const emailDomain = user.email?.split("@").pop()?.toLowerCase();
+
+    if (allowedDomains.length && !allowedDomains.includes(emailDomain)) {
+      return res.status(403).json({
+        success: false,
+        error: "Please sign in with your school email address",
+      });
+    }
+
+    req.user = user;
     next();
-    } catch (err) {
-    console.error("Auth error:", err);
-    res.status(401).json({ error: "Unauthorized" });
+  } catch (err) {
+    console.error("Auth verification failed:", err.message);
+    res.status(401).json({ success: false, error: "Authentication failed" });
     }
 }
 

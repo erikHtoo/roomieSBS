@@ -99,8 +99,11 @@ Thumbs.db
 # Upload directories
 uploads/
 
-# Package locks (keep package-lock.json in individual projects)
-package-lock.json
+# Local browser-audit artifacts
+.playwright-cli/
+work/
+
+# Commit per-project lockfiles so deployments install the audited dependency tree.
 
 # Specific to this project structure
 ../filtered_good_first_issues.json

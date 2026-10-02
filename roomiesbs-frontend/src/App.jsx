@@ -1,24 +1,39 @@
-import { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 
 // auth provider
-import { AuthProvider } from "./auth/authProvider.js";
-import ProtectedRoute from "./auth/ProtectedRoute.js";
-import PublicRoute from "./auth/publicRoute.js";
+import { AuthProvider } from "./auth/authProvider.jsx";
+import ProtectedRoute from "./auth/ProtectedRoute.jsx";
+import PublicRoute from "./auth/publicRoute.jsx";
 
 // pages
-import UploadRoom from "./pages/UploadRoom.js";
-import EditRoom from "./pages/editRoom.js";
-import Login from "./auth/login";
-import Register from "./auth/register";
-import Profile from "./pages/profile.js";
-import HomePage from "./pages/HomePage.js";
-import RoomPage from "./pages/RoomPage.js";
-import ListingPage from "./pages/listingPage.js";
-import UploadRoommateProfile from "./pages/UploadRoommate.js";
-import ProfilePage from "./pages/roommatePage.js";
-import EditRoommateProfile from "./pages/editRoommate.js";
-import Exchange from "./pages/exchange.js";
+const UploadRoom = lazy(() => import("./pages/UploadRoom.jsx"));
+const EditRoom = lazy(() => import("./pages/editRoom.jsx"));
+const Login = lazy(() => import("./auth/login.jsx"));
+const Register = lazy(() => import("./auth/register.jsx"));
+const ForgotPassword = lazy(() => import("./auth/forgotPassword.jsx"));
+const ChangePassword = lazy(() => import("./auth/changePassword.jsx"));
+const Profile = lazy(() => import("./pages/profile.jsx"));
+const HomePage = lazy(() => import("./pages/HomePage.jsx"));
+const RoomPage = lazy(() => import("./pages/RoomPage.jsx"));
+const ListingPage = lazy(() => import("./pages/listingPage.jsx"));
+const UploadRoommateProfile = lazy(() => import("./pages/UploadRoommate.jsx"));
+const ProfilePage = lazy(() => import("./pages/roommatePage.jsx"));
+const EditRoommateProfile = lazy(() => import("./pages/editRoommate.jsx"));
+const Exchange = lazy(() => import("./pages/exchange.jsx"));
+
+function NotFound() {
+  return (
+    <main className="min-h-screen grid place-items-center bg-slate-50 px-6 text-center">
+      <div>
+        <p className="text-sm font-semibold text-rose-700">404</p>
+        <h1 className="mt-2 text-3xl font-semibold text-slate-950">Page not found</h1>
+        <p className="mt-3 text-slate-600">The page may have moved or the link may be incorrect.</p>
+        <Link to="/" className="mt-6 inline-flex rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Back to UniMates</Link>
+      </div>
+    </main>
+  );
+}
 
 // utilities
 import { Toaster } from "react-hot-toast";
@@ -27,13 +42,14 @@ import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function App() {
   useEffect(() => {
-    document.title = "UniMates";
+    document.title = "UniMates | Student housing";
   }, []);
 
   return (
     <>
       <Router>
         <AuthProvider>
+          <Suspense fallback={<div className="min-h-screen grid place-items-center bg-slate-50 text-sm text-slate-600" role="status">Loading page…</div>}>
           <Routes>
             {/* Public Routes */}
             <Route
@@ -49,6 +65,14 @@ function App() {
               element={
                 <PublicRoute>
                   <Register />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/forgot-password"
+              element={
+                <PublicRoute>
+                  <ForgotPassword />
                 </PublicRoute>
               }
             />
@@ -72,6 +96,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/change-password"
+              element={
+                <ProtectedRoute>
+                  <ChangePassword />
                 </ProtectedRoute>
               }
             />
@@ -115,7 +147,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </AuthProvider>
       </Router>
 

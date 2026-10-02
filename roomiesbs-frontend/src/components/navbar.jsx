@@ -1,123 +1,65 @@
-// src/components/Navbar.jsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  FiUser,
-  FiMapPin,
-  FiUsers,
-  FiMenu,
-  FiX,
-  FiRepeat,
-} from "react-icons/fi";
+import { Link, NavLink } from "react-router-dom";
+import { FiUser, FiMapPin, FiUsers, FiMenu, FiX, FiRepeat, FiLogIn } from "react-icons/fi";
+import { useAuth } from "../auth/useAuth";
+
+const navItem = ({ isActive }) =>
+  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+    isActive
+      ? "bg-slate-100 text-slate-950"
+      : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+  }`;
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+
+  const links = [
+    { to: "/", label: "Roommates", icon: FiUsers, end: true },
+    { to: "/rooms", label: "Rooms", icon: FiMapPin },
+    { to: "/exchange", label: "Exchange rate", icon: FiRepeat },
+  ];
 
   return (
-    <header className="sticky top-0 z-50 bg-gradient-to-r from-rose-500 via-pink-500 to-red-500 shadow-md">
-      <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8 py-3">
-        {/* Logo / Brand */}
-        <Link
-          to="/"
-          className="flex items-center gap-1 hover:opacity-90 transition shrink-0"
-        >
-          <img
-            src="/assets/unimatesLogo.png"
-            alt="UniMates"
-            className="-translate-y-px h-12 sm:h-14 lg:h-16 w-auto shrink-0 object-contain"
-          />
-          <span className="-ml-1 -translate-y-1 text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-none drop-shadow-sm">
-            <span className="text-white">Uni</span>
-            <span className="text-cyan-100">Mates</span>
-          </span>
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link to="/" className="flex items-center gap-2.5 text-slate-950" aria-label="UniMates home">
+          <img src="/assets/unimatesLogo.png" alt="" className="h-8 w-8 object-contain" />
+          <span className="text-xl font-semibold tracking-tight">UniMates</span>
+          <span className="hidden rounded border border-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 sm:inline">Students</span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-3">
-          <Link
-            to="/exchange"
-            className="flex items-center gap-3 pt-2 px-4 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
-          >
-            MMK ⇄ VND
-          </Link>
-
-          <Link
-            to="/"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
-          >
-            <FiUsers size={18} />
-            Find Roommates
-          </Link>
-
-          <Link
-            to="/rooms"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-white font-semibold hover:bg-white/10 transition"
-          >
-            <FiMapPin size={18} />
-            Find Rooms
-          </Link>
-
-          <Link
-            to="/profile"
-            className="p-2 bg-white/90 rounded-full flex items-center justify-center hover:bg-white shadow-sm hover:shadow-md transition"
-            title="Profile"
-          >
-            <FiUser size={22} className="text-rose-600" />
-          </Link>
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
+          {links.map(({ to, label, icon: Icon, end }) => (
+            <NavLink key={to} to={to} end={end} className={navItem}>
+              <Icon size={17} aria-hidden="true" />
+              {label}
+            </NavLink>
+          ))}
+          <NavLink to={user ? "/profile" : "/login"} className={navItem}>
+            {user ? <FiUser size={17} aria-hidden="true" /> : <FiLogIn size={17} aria-hidden="true" />}
+            {user ? "My account" : "Sign in"}
+          </NavLink>
         </nav>
 
-        {/* Hamburger */}
-        <div className="flex items-center gap-2 md:hidden">
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-white focus:outline-none"
-          >
-            {isOpen ? <FiX size={26} /> : <FiMenu size={26} />}
-          </button>
-        </div>
+        <button type="button" onClick={() => setIsOpen((open) => !open)} className="rounded-lg p-2 text-slate-700 hover:bg-slate-100 md:hidden" aria-expanded={isOpen} aria-controls="mobile-navigation" aria-label={isOpen ? "Close menu" : "Open menu"}>
+          {isOpen ? <FiX size={23} /> : <FiMenu size={23} />}
+        </button>
       </div>
 
-      {/* Mobile Dropdown Menu */}
       {isOpen && (
-        <div className="md:hidden absolute top-[60px] right-4">
-          <div className="w-48 bg-white/95 backdrop-blur-md rounded-xl shadow-lg py-2 border border-white/30">
-            <Link
-              to="/profile"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center justify-between px-4 py-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-lg"
-            >
-              Profile
-              <FiUser size={18} />
-            </Link>
-
-            <Link
-              to="/exchange"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center justify-between px-4 py-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-lg"
-            >
-              MMK↔VND
-              <FiRepeat size={18} />
-            </Link>
-
-            <Link
-              to="/"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center justify-between px-4 py-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-lg"
-            >
-              Find Roommates
-              <FiUsers size={18} />
-            </Link>
-
-            <Link
-              to="/rooms"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center justify-between px-4 py-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-lg"
-            >
-              Find Rooms
-              <FiMapPin size={18} />
-            </Link>
+        <nav id="mobile-navigation" className="border-t border-slate-200 bg-white px-4 py-3 md:hidden" aria-label="Mobile navigation">
+          <div className="mx-auto grid max-w-7xl gap-1">
+            {links.map(({ to, label, icon: Icon, end }) => (
+              <NavLink key={to} to={to} end={end} onClick={() => setIsOpen(false)} className={navItem}>
+                <Icon size={18} aria-hidden="true" />{label}
+              </NavLink>
+            ))}
+            <NavLink to={user ? "/profile" : "/login"} onClick={() => setIsOpen(false)} className={navItem}>
+              {user ? <FiUser size={18} /> : <FiLogIn size={18} />}{user ? "My account" : "Sign in"}
+            </NavLink>
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

@@ -32,15 +32,12 @@ export default function Profile() {
         setRoommateProfile(profileRes.data.profile);
 
         const listingsRes = await axios.get(
-          `${process.env.REACT_APP_API_URL}/rooms`,
+          `${process.env.REACT_APP_API_URL}/rooms/mine`,
           {
             headers: { Authorization: `Bearer ${session.access_token}` },
           }
         );
-        const myOwnedRooms = listingsRes.data.rooms.filter(
-          (room) => room.owner_id === user?.id
-        );
-        setMyRooms(myOwnedRooms);
+        setMyRooms(listingsRes.data.rooms || []);
       } catch (err) {
         console.error("Error fetching profile or listings:", err);
       } finally {
@@ -121,7 +118,7 @@ export default function Profile() {
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={() => navigate("/change-password")}
-              className="px-5 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-medium hover:opacity-90 transition"
+              className="px-5 py-2 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 transition"
             >
               Change Password
             </button>
@@ -132,9 +129,6 @@ export default function Profile() {
                 } catch (err) {
                   console.error("Sign out failed:", err);
                 } finally {
-                  try {
-                    localStorage.removeItem("sb-access-token");
-                  } catch {}
                   navigate("/login");
                 }
               }}

@@ -4,12 +4,7 @@
   "private": true,
   "homepage": "https://unimates.sbs",
   "dependencies": {
-    "@react-google-maps/api": "^2.20.7",
     "@supabase/supabase-js": "^2.55.0",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.7.0",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^13.5.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.11.0",
@@ -20,15 +15,15 @@
     "react-easy-crop": "^5.5.7",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^6.28.0",
-    "react-scripts": "^5.0.1",
-    "web-vitals": "^2.1.4"
+    "react-router-dom": "^7.18.4"
   },
   "scripts": {
-    "start": "node --no-deprecation ./node_modules/react-scripts/bin/react-scripts.js start",
-    "build": "CI=false react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "engines": {
+    "node": ">=20.19"
   },
   "eslintConfig": {
     "extends": [
@@ -49,8 +44,10 @@
     ]
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.14"
+    "tailwindcss": "^3.4.14",
+    "vite": "^8.3.2"
   }
 }

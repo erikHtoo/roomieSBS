@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import Navbar from "../components/navbar";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import { useAuth } from "../auth/useAuth";
+import { safeFacebookUrl } from "../utils/contactLinks";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import {
   FaBed,
@@ -23,12 +25,14 @@ const RoomPage = () => {
   const [images, setImages] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [roomCount, setRoomCount] = useState(0);
+  const { session } = useAuth();
 
   useEffect(() => {
     const fetchRoom = async () => {
       try {
         const res = await axios.get(
           `${process.env.REACT_APP_API_URL}/rooms/${id}`,
+          { headers: { Authorization: `Bearer ${session.access_token}` } },
         );
         setRoom(res.data.room);
         setImages(res.data.room.image_urls || []);
@@ -46,9 +50,11 @@ const RoomPage = () => {
       }
     };
 
-    fetchRoom();
-    fetchRoomCount();
-  }, [id]);
+    if (session?.access_token) {
+      fetchRoom();
+      fetchRoomCount();
+    }
+  }, [id, session]);
 
   if (!room)
     return (
@@ -68,6 +74,7 @@ const RoomPage = () => {
         })()
       : room.contact || {};
   const formattedDate = new Date(room.created_at).toLocaleDateString();
+  const facebookUrl = safeFacebookUrl(contact?.facebook);
 
   const formatPrice = (value) => {
     if (value === null || value === undefined || value === "") return "-";
@@ -217,15 +224,11 @@ const RoomPage = () => {
                 Contact
               </h3>
               <div className="space-y-3 text-gray-700">
-                {contact?.facebook && (
+                {facebookUrl && (
                   <div className="flex items-center gap-2">
                     <FaFacebook className="text-blue-600" />
                     <a
-                      href={
-                        contact.facebook.startsWith("http")
-                          ? contact.facebook
-                          : `https://${contact.facebook}`
-                      }
+                      href={facebookUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 underline"

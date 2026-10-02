@@ -3,6 +3,10 @@ import Cropper from "react-easy-crop";
 import "react-easy-crop/react-easy-crop.css";
 import { FaArrowLeft, FaArrowRight, FaTrash } from "react-icons/fa";
 import { createImageFile, getCroppedBlob } from "../utils/cropImage";
+import toast from "react-hot-toast";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const createItem = (file) => ({
   id:
@@ -69,9 +73,21 @@ const ImageUploadField = ({
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
 
+    const validFiles = files.filter((file) => {
+      if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+        toast.error(`${file.name}: use a JPG, PNG, or WebP image.`);
+        return false;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`${file.name}: images must be 5 MB or smaller.`);
+        return false;
+      }
+      return true;
+    });
+
     setImages((currentImages) => {
       const remainingSlots = Math.max(maxImages - currentImages.length, 0);
-      const nextItems = files.slice(0, remainingSlots).map(createItem);
+      const nextItems = validFiles.slice(0, remainingSlots).map(createItem);
       return [...currentImages, ...nextItems];
     });
 
@@ -234,7 +250,7 @@ const ImageUploadField = ({
           ref={inputRef}
           type="file"
           multiple
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
           onChange={handleSelectFiles}
           className="hidden"
         />

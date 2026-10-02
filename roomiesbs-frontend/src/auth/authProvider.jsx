@@ -10,13 +10,15 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      setUser(session?.user ?? null);
-      setSession(session);
-      setLoading(false); // move this AFTER setting session/user
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        setSession(session);
+      } finally {
+        setLoading(false);
+      }
     };
 
     initAuth();
@@ -25,8 +27,8 @@ export function AuthProvider({ children }) {
       (_event, session) => {
         setUser(session?.user ?? null);
         setSession(session);
-        setLoading(false); // ensure loading stops after state change too
-      }
+        setLoading(false);
+      },
     );
 
     return () => listener.subscription.unsubscribe();
@@ -40,7 +42,13 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{ user, session, signOut, loading }}>
-      {loading ? null : children}
+      {loading ? (
+        <div className="min-h-screen grid place-items-center bg-slate-50 text-sm text-slate-600" role="status">
+          Loading UniMates…
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

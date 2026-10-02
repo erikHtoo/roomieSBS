@@ -1,6 +1,6 @@
 # UniMates (roomieSBS)
 
-[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/) [![Node](https://img.shields.io/badge/Node.js-%3E=16-brightgreen)](https://nodejs.org/) [![Supabase](https://img.shields.io/badge/Supabase-Postgres-4ea94b)](https://supabase.com/)
+[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/) [![Node](https://img.shields.io/badge/Node.js-%3E=20.19-brightgreen)](https://nodejs.org/) [![Supabase](https://img.shields.io/badge/Supabase-Postgres-4ea94b)](https://supabase.com/)
 
 ### Live site: https://unimates.sbs/
 
@@ -19,15 +19,15 @@ UniMates (roomieSBS) is a roommate and room-listing application that lets users 
 
 ## Tech Stack
 
-- Frontend: React 18 (Create React App), react-router-dom, framer-motion, axios
+- Frontend: React 18, Vite, react-router-dom, framer-motion, axios
 - Styling: Tailwind CSS, PostCSS, Autoprefixer
 - Backend: Node.js + Express, express-rate-limit, helmet, compression, multer, express-validator
 - Cloud / Services: Supabase (Auth, Storage, Postgres), Vercel analytics & speed insights
-- Dev & tooling: ESLint (via CRA presets), react-scripts, nodemon for backend dev, dotenv for environment variables
+- Dev & tooling: Vite, GitHub Actions, Dependabot, nodemon, dotenv
 
 ## Architecture / System Design
 
-- SPA Client (Create React App)
+- SPA Client (Vite)
   - Routes and pages live under `src/pages/` and shared components under `src/components/`.
   - `src/supabaseClient.js` configures the browser SDK to interact with Supabase storage and auth.
 
@@ -42,7 +42,7 @@ UniMates (roomieSBS) is a roommate and room-listing application that lets users 
 
 Prerequisites:
 
-- Node.js (16+ recommended)
+- Node.js 20.19 or newer
 - npm
 
 1. Clone repository
@@ -57,7 +57,8 @@ cd roomieSBS
 ```bash
 cd roomieSBS-backend
 cp .env.example .env
-# Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY and CORS_ORIGIN (e.g. http://localhost:3000)
+# Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CORS_ORIGIN,
+# ALLOWED_EMAIL_DOMAINS, and ALLOWED_IMAGE_HOSTS
 npm install
 npm run dev
 ```
@@ -67,7 +68,8 @@ npm run dev
 ```bash
 cd ../roomiesbs-frontend
 cp .env.example .env
-# Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY and REACT_APP_API_URL (backend API URL)
+# Set VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL, and
+# VITE_ALLOWED_EMAIL_DOMAINS
 npm install
 npm start
 ```
@@ -78,6 +80,9 @@ Build (production)
 cd roomiesbs-frontend
 npm run build
 ```
+
+Before a production launch, apply the SQL files in `supabase/migrations/` and
+complete the checklist in [SECURITY.md](SECURITY.md).
 
 ## Folder Structure
 

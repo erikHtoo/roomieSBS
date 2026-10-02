@@ -10,25 +10,50 @@ const rateLimit = require("express-rate-limit");
 const compression = require("compression");
 const app = express();
 const PORT = process.env.PORT || 5000;
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
 
 // CORS must run before other middlewares so all responses include headers
-const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:3000";
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 app.use(
   cors({
-    origin: CORS_ORIGIN,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("Origin not allowed"));
+    },
     credentials: true,
+    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Authorization", "Content-Type"],
+    maxAge: 86400,
   }),
 );
 // Security headers
-app.use(helmet());
-// Rate limiting: allow higher throughput for local dev, and ensure 429 includes CORS
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "same-site" },
+  }),
+);
+// General abuse protection. Stricter write limits are applied below.
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // dev: raise limit to avoid accidental 429s
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === "production" ? 300 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
+  message: { success: false, error: "Too many requests. Try again later." },
 });
 app.use(limiter);
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === "production" ? 30 : 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => ["GET", "HEAD", "OPTIONS"].includes(req.method),
+  message: { success: false, error: "Too many changes. Try again later." },
+});
+app.use(writeLimiter);
 // Compress responses (prefer JSON)
 app.use(
   compression({
@@ -36,8 +61,8 @@ app.use(
   }),
 );
 // Body size limits to protect against large payloads
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ limit: "1mb", extended: true }));
+app.use(express.json({ limit: "128kb", strict: true }));
+app.use(express.urlencoded({ limit: "128kb", extended: false }));
 
 // Room routes
 const roomRoutes = require("./routes/rooms.js");
@@ -60,6 +85,18 @@ app.head("/health", (req, res) => {
   res.sendStatus(200);
 });
 
+// Dependency-aware readiness check for deploys and incident diagnosis.
+app.get("/ready", async (req, res) => {
+  try {
+    const { error } = await supabase.from("exchange").select("rate").limit(1);
+    if (error) throw error;
+    res.status(200).json({ success: true, status: "ready" });
+  } catch (error) {
+    console.error("Readiness check failed:", error.message);
+    res.status(503).json({ success: false, status: "dependency_unavailable" });
+  }
+});
+
 // ============================
 // Global Error Handling Middleware
 // ============================
@@ -75,7 +112,7 @@ app.use((err, req, res, next) => {
   console.error("===============");
 
   // Send clean message to user (no internal details)
-  const statusCode = err.status || 500;
+  const statusCode = err.message === "Origin not allowed" ? 403 : err.status || 500;
   const userMessage =
     statusCode === 500
       ? "Internal server error. Please try again later."

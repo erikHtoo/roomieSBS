@@ -9,6 +9,48 @@ const sanitizeHtml = require("sanitize-html");
 const sanitizeField = (text) =>
   sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} }).trim();
 
+const isValidImageUrl = (value) => {
+  try {
+    const url = new URL(value);
+    const allowedHosts = (process.env.ALLOWED_IMAGE_HOSTS || "")
+      .split(",")
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean);
+    return (
+      url.protocol === "https:" &&
+      (!allowedHosts.length || allowedHosts.includes(url.hostname.toLowerCase()))
+    );
+  } catch {
+    return false;
+  }
+};
+
+const profileValidators = [
+  body("person_image_urls")
+    .optional()
+    .isArray({ max: 8 })
+    .withMessage("no more than 8 profile images are allowed")
+    .custom((urls) => urls.every(isValidImageUrl))
+    .withMessage("profile images must use an approved HTTPS host"),
+  body("person_name").optional().isString().trim().isLength({ min: 1, max: 100 }),
+  body("person_gender").optional().toBoolean().isBoolean(),
+  body("person_budget")
+    .optional()
+    .isFloat({ min: 0, max: 999999999 })
+    .withMessage("person_budget must be between 0 and 999,999,999"),
+  body("person_preferred_location").optional().isString().trim().isLength({ max: 200 }),
+  body("person_about").optional().isString().trim().isLength({ max: 1200 }),
+  body("person_contact").optional().isObject(),
+  body("person_contact.zalo").optional({ checkFalsy: true }).isString().trim().isLength({ max: 200 }),
+  body("person_contact.facebook").optional({ checkFalsy: true }).isString().trim().isLength({ max: 200 }),
+  body("person_contact.viber").optional({ checkFalsy: true }).isString().trim().isLength({ max: 200 }),
+  body("person_friends").optional().isArray({ max: 5 }),
+  body("person_friends.*.name").optional().isString().trim().isLength({ min: 1, max: 100 }),
+  body("person_friends.*.gender").optional().isString().trim().isLength({ max: 30 }),
+  body("person_traits").optional().isArray({ max: 12 }),
+  body("person_traits.*").optional().isString().trim().isLength({ max: 60 }),
+];
+
 // ============================
 // GET current user's profile
 // ============================
@@ -23,8 +65,8 @@ router.get("/", authMiddleware.verifyAuth, async (req, res) => {
     if (error && error.code !== "PGRST116") throw error;
     res.json({ profile: data || null });
   } catch (err) {
-    console.error("Error fetching profile:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching profile:", err.message);
+    res.status(500).json({ error: "Failed to fetch profile" });
   }
 });
 
@@ -35,21 +77,24 @@ router.get("/all", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("roommates_table")
-      .select("*")
+      .select(
+        "id, person_image_urls, person_name, person_gender, person_budget, person_preferred_location, person_about, person_friends, person_traits, person_active, created_at",
+      )
+      .eq("person_active", true)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
     res.json({ profiles: data });
   } catch (err) {
-    console.error("Error fetching all profiles:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching all profiles:", err.message);
+    res.status(500).json({ error: "Failed to fetch profiles" });
   }
 });
 
 // ============================
 // GET profile by ID (view another roommate)
 // ============================
-router.get("/:id", async (req, res) => {
+router.get("/:id", authMiddleware.verifyAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -59,12 +104,15 @@ router.get("/:id", async (req, res) => {
       .eq("id", id)
       .single();
 
+    if (error?.code === "PGRST116") {
+      return res.status(404).json({ error: "Profile not found" });
+    }
     if (error) throw error;
 
     res.json({ profile: data });
   } catch (err) {
-    console.error("Error fetching profile by id:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching profile by id:", err.message);
+    res.status(500).json({ error: "Failed to fetch profile" });
   }
 });
 
@@ -74,49 +122,7 @@ router.get("/:id", async (req, res) => {
 router.post(
   "/",
   authMiddleware.verifyAuth,
-  [
-    body("person_name")
-      .exists()
-      .withMessage("person_name is required")
-      .isString(),
-    body("person_gender").optional().toBoolean().isBoolean(),
-    body("person_budget")
-      .optional()
-      .custom((value) => {
-        if (value === undefined || value === null) return true;
-        const num = typeof value === "string" ? parseFloat(value) : value;
-        if (isNaN(num) || !isFinite(num)) {
-          throw new Error("person_budget must be a valid number");
-        }
-        return true;
-      }),
-    body("person_preferred_location").optional().isString(),
-    body("person_about").optional().isString(),
-    body("person_contact").optional(),
-    body("person_contact.zalo")
-      .optional({ checkFalsy: true })
-      .trim()
-      .isLength({ max: 200 })
-      .withMessage("zalo contact must not exceed 200 characters"),
-    body("person_contact.facebook")
-      .optional({ checkFalsy: true })
-      .trim()
-      .isLength({ max: 200 })
-      .withMessage("facebook contact must not exceed 200 characters"),
-    body("person_contact.viber")
-      .optional({ checkFalsy: true })
-      .trim()
-      .isLength({ max: 200 })
-      .withMessage("viber contact must not exceed 200 characters"),
-    body("person_friends")
-      .optional()
-      .isArray()
-      .withMessage("person_friends must be an array"),
-    body("person_traits")
-      .optional()
-      .isArray()
-      .withMessage("person_traits must be an array"),
-  ],
+  [body("person_name").exists().withMessage("person_name is required"), ...profileValidators],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty())
@@ -155,10 +161,12 @@ router.post(
       // Sanitize friend names
       const sanitizedFriends = person_friends
         ? person_friends.map((friend) => ({
-            ...friend,
             name: friend.name ? sanitizeField(friend.name) : "",
+            gender: friend.gender ? sanitizeField(friend.gender) : "",
           }))
         : null;
+
+      const sanitizedTraits = person_traits?.map((trait) => sanitizeField(trait));
 
       const { data, error } = await supabase
         .from("roommates_table")
@@ -176,7 +184,7 @@ router.post(
                 ? JSON.stringify(sanitizedContact)
                 : sanitizedContact,
             person_friends: sanitizedFriends || null,
-            person_traits: person_traits || null,
+            person_traits: sanitizedTraits || null,
             person_active: true,
           },
         ])
@@ -186,8 +194,8 @@ router.post(
 
       res.status(201).json({ success: true, roommate: data[0] });
     } catch (err) {
-      console.error("Error inserting roommate profile:", err);
-      res.status(500).json({ success: false, error: err.message });
+      console.error("Error inserting roommate profile:", err.message);
+      res.status(500).json({ success: false, error: "Failed to create profile" });
     }
   }
 );
@@ -199,44 +207,7 @@ router.put(
   "/",
   authMiddleware.verifyAuth,
   [
-    body("person_name").optional().isString(),
-    body("person_gender").optional().toBoolean().isBoolean(),
-    body("person_budget")
-      .optional()
-      .custom((value) => {
-        if (value === undefined || value === null) return true;
-        const num = typeof value === "string" ? parseFloat(value) : value;
-        if (isNaN(num) || !isFinite(num)) {
-          throw new Error("person_budget must be a valid number");
-        }
-        return true;
-      }),
-    body("person_preferred_location").optional().isString(),
-    body("person_about").optional().isString(),
-    body("person_contact").optional(),
-    body("person_contact.zalo")
-      .optional({ checkFalsy: true })
-      .trim()
-      .isLength({ max: 200 })
-      .withMessage("zalo contact must not exceed 200 characters"),
-    body("person_contact.facebook")
-      .optional({ checkFalsy: true })
-      .trim()
-      .isLength({ max: 200 })
-      .withMessage("facebook contact must not exceed 200 characters"),
-    body("person_contact.viber")
-      .optional({ checkFalsy: true })
-      .trim()
-      .isLength({ max: 200 })
-      .withMessage("viber contact must not exceed 200 characters"),
-    body("person_friends")
-      .optional()
-      .isArray()
-      .withMessage("person_friends must be an array"),
-    body("person_traits")
-      .optional()
-      .isArray()
-      .withMessage("person_traits must be an array"),
+    ...profileValidators,
     body("person_active")
       .optional()
       .toBoolean()
@@ -299,14 +270,15 @@ router.put(
       if (person_friends !== undefined) {
         const sanitizedFriends = person_friends
           ? person_friends.map((friend) => ({
-              ...friend,
               name: friend.name ? sanitizeField(friend.name) : "",
+              gender: friend.gender ? sanitizeField(friend.gender) : "",
             }))
           : null;
         updatePayload.person_friends = sanitizedFriends || null;
       }
       if (person_traits !== undefined)
-        updatePayload.person_traits = person_traits || null;
+        updatePayload.person_traits =
+          person_traits?.map((trait) => sanitizeField(trait)) || null;
       if (person_active !== undefined)
         updatePayload.person_active = person_active;
 
@@ -326,8 +298,8 @@ router.put(
       if (error) throw error;
       res.json({ success: true, profile: data[0] });
     } catch (err) {
-      console.error("Error updating profile:", err);
-      res.status(500).json({ success: false, error: err.message });
+      console.error("Error updating profile:", err.message);
+      res.status(500).json({ success: false, error: "Failed to update profile" });
     }
   }
 );
@@ -347,8 +319,8 @@ router.delete("/", authMiddleware.verifyAuth, async (req, res) => {
 
     res.json({ success: true, deletedProfile: data[0] });
   } catch (err) {
-    console.error("Error deleting profile:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("Error deleting profile:", err.message);
+    res.status(500).json({ success: false, error: "Failed to delete profile" });
   }
 });
 
@@ -375,8 +347,8 @@ router.patch("/", authMiddleware.verifyAuth, async (req, res) => {
 
     res.json({ success: true, updatedProfile: data[0] });
   } catch (err) {
-    console.error("Error updating active status:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("Error updating active status:", err.message);
+    res.status(500).json({ success: false, error: "Failed to update profile status" });
   }
 });
 

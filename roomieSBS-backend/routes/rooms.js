@@ -15,7 +15,14 @@ const sanitizeField = (text) => {
 const isValidUrl = (url) => {
   try {
     const u = new URL(url);
-    return ["https:", "http:"].includes(u.protocol);
+    const allowedHosts = (process.env.ALLOWED_IMAGE_HOSTS || "")
+      .split(",")
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean);
+    return (
+      u.protocol === "https:" &&
+      (!allowedHosts.length || allowedHosts.includes(u.hostname.toLowerCase()))
+    );
   } catch {
     return false;
   }
@@ -65,7 +72,7 @@ router.post(
       .trim()
       .isLength({ max: 500 })
       .withMessage("address must not exceed 500 characters"),
-    body("contact").optional(),
+    body("contact").optional().isObject().withMessage("contact must be an object"),
     body("contact.zalo")
       .optional({ checkFalsy: true })
       .trim()
@@ -105,18 +112,20 @@ router.post(
       .trim()
       .isLength({ max: 100 })
       .withMessage("category must not exceed 100 characters"),
-    body("bedrooms").optional().isNumeric(),
-    body("bathrooms").optional().isNumeric(),
+    body("bedrooms").optional().isInt({ min: 0, max: 20 }),
+    body("bathrooms").optional().isInt({ min: 0, max: 20 }),
     body("image_urls")
       .optional()
       .isArray()
       .withMessage("image_urls must be an array")
+      .isArray({ max: 12 })
+      .withMessage("no more than 12 images are allowed")
       .custom((value) => {
         if (Array.isArray(value)) {
           for (let url of value) {
             if (!isValidUrl(url)) {
               throw new Error(
-                "each image URL must be a valid http or https URL"
+                "each image URL must use an approved HTTPS host"
               );
             }
           }
@@ -125,7 +134,7 @@ router.post(
       }),
     body("amenities")
       .optional()
-      .isArray()
+      .isArray({ max: 20 })
       .withMessage("amenities must be an array")
       .custom((value) => {
         if (Array.isArray(value)) {
@@ -227,8 +236,8 @@ router.post(
       if (error) throw error;
       res.status(201).json({ success: true, room: data[0] });
     } catch (err) {
-      console.error("Error inserting room:", err);
-      res.status(500).json({ success: false, error: err.message });
+      console.error("Error inserting room:", err.message);
+      res.status(500).json({ success: false, error: "Failed to create room" });
     }
   }
 );
@@ -240,7 +249,9 @@ router.get("/", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("listings_table")
-      .select("*")
+      .select(
+        "room_id, description, rent, image_urls, transfer_contract, remaining_contract, category, bedrooms, bathrooms, amenities, created_at",
+      )
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -248,15 +259,38 @@ router.get("/", async (req, res) => {
     // Parse each listing's JSON fields
     const parsedRooms = data.map((r) => ({
       ...r,
-      contact: tryParse(r.contact, {}),
       image_urls: tryParse(r.image_urls, []),
       amenities: tryParse(r.amenities, []),
     }));
 
     res.json({ rooms: parsedRooms });
   } catch (err) {
-    console.error("Error fetching rooms:", err);
+    console.error("Error fetching rooms:", err.message);
     res.status(500).json({ error: "Failed to fetch rooms" });
+  }
+});
+
+// Full listings owned by the signed-in user. Kept separate from the public
+// feed so owner IDs and contact details are never disclosed in bulk.
+router.get("/mine", authMiddleware.verifyAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("listings_table")
+      .select("*")
+      .eq("owner_id", req.user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    const rooms = data.map((room) => ({
+      ...room,
+      contact: tryParse(room.contact, {}),
+      image_urls: tryParse(room.image_urls, []),
+      amenities: tryParse(room.amenities, []),
+    }));
+    res.json({ rooms });
+  } catch (err) {
+    console.error("Error fetching owned rooms:", err.message);
+    res.status(500).json({ success: false, error: "Failed to fetch your rooms" });
   }
 });
 
@@ -318,15 +352,15 @@ router.get("/edit/:id", authMiddleware.verifyAuth, async (req, res) => {
 
     res.json({ room: { ...data, contact: parsedContact } });
   } catch (err) {
-    console.error("Error fetching editable room:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("Error fetching editable room:", err.message);
+    res.status(500).json({ success: false, error: "Failed to fetch room" });
   }
 });
 
 // ============================
 // READ (single room page)
 // ============================
-router.get("/:id", async (req, res) => {
+router.get("/:id", authMiddleware.verifyAuth, async (req, res) => {
   const { id } = req.params;
   try {
     const { data, error } = await supabase
@@ -335,6 +369,9 @@ router.get("/:id", async (req, res) => {
       .eq("room_id", id)
       .single();
 
+    if (error?.code === "PGRST116") {
+      return res.status(404).json({ error: "Listing not found" });
+    }
     if (error) throw error;
     if (!data) return res.status(404).json({ error: "Listing not found" });
 
@@ -348,8 +385,8 @@ router.get("/:id", async (req, res) => {
 
     res.json({ room: parsed });
   } catch (err) {
-    console.error("Error fetching room:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching room:", err.message);
+    res.status(500).json({ error: "Failed to fetch room" });
   }
 });
 
@@ -398,7 +435,7 @@ router.put(
       .trim()
       .isLength({ max: 500 })
       .withMessage("address must not exceed 500 characters"),
-    body("contact").optional(),
+    body("contact").optional().isObject().withMessage("contact must be an object"),
     body("contact.zalo")
       .optional({ checkFalsy: true })
       .trim()
@@ -438,18 +475,20 @@ router.put(
       .trim()
       .isLength({ max: 100 })
       .withMessage("category must not exceed 100 characters"),
-    body("bedrooms").optional().isNumeric(),
-    body("bathrooms").optional().isNumeric(),
+    body("bedrooms").optional().isInt({ min: 0, max: 20 }),
+    body("bathrooms").optional().isInt({ min: 0, max: 20 }),
     body("image_urls")
       .optional()
       .isArray()
       .withMessage("image_urls must be an array")
+      .isArray({ max: 12 })
+      .withMessage("no more than 12 images are allowed")
       .custom((value) => {
         if (Array.isArray(value)) {
           for (let url of value) {
             if (!isValidUrl(url)) {
               throw new Error(
-                "each image URL must be a valid http or https URL"
+                "each image URL must use an approved HTTPS host"
               );
             }
           }
@@ -458,7 +497,7 @@ router.put(
       }),
     body("amenities")
       .optional()
-      .isArray()
+      .isArray({ max: 20 })
       .withMessage("amenities must be an array")
       .custom((value) => {
         if (Array.isArray(value)) {
@@ -569,8 +608,8 @@ router.put(
 
       res.json({ success: true, room: data[0] });
     } catch (err) {
-      console.error("Error updating room:", err);
-      res.status(500).json({ success: false, error: err.message });
+      console.error("Error updating room:", err.message);
+      res.status(500).json({ success: false, error: "Failed to update room" });
     }
   }
 );
@@ -583,6 +622,12 @@ router.put("/:id/images", authMiddleware.verifyAuth, async (req, res) => {
   const { image_urls } = req.body;
 
   try {
+    if (!Array.isArray(image_urls) || image_urls.length > 12) {
+      return res.status(400).json({
+        success: false,
+        error: "image_urls must contain no more than 12 images",
+      });
+    }
     // Filter URLs to allow only http/https (prevent javascript:, data:, etc.)
     const cleanImages = Array.isArray(image_urls)
       ? image_urls.filter(isValidUrl)
@@ -602,8 +647,8 @@ router.put("/:id/images", authMiddleware.verifyAuth, async (req, res) => {
     if (error) throw error;
     res.json({ success: true, room: data[0] });
   } catch (err) {
-    console.error("Error updating room images:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("Error updating room images:", err.message);
+    res.status(500).json({ success: false, error: "Failed to update room images" });
   }
 });
 
@@ -630,8 +675,8 @@ router.delete("/:id", authMiddleware.verifyAuth, async (req, res) => {
 
     res.json({ success: true, deleted: data[0] });
   } catch (err) {
-    console.error("Error deleting room:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error("Error deleting room:", err.message);
+    res.status(500).json({ success: false, error: "Failed to delete room" });
   }
 });
 module.exports = router;
