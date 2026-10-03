@@ -665,7 +665,7 @@ const EditRoommateProfile = () => {
                           : updater,
                     }))
                   }
-                  maxImages={12}
+                  maxImages={8}
                 />
 
                 <div className="flex justify-between">

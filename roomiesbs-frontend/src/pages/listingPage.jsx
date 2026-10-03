@@ -152,15 +152,15 @@ export default function ListingPage() {
 
       <section className="mx-auto max-w-7xl px-6 py-10 sm:py-14">
         <p className="text-xs font-semibold tracking-[0.18em] uppercase text-rose-700">
-          Room directory
+          SBS housing board
         </p>
 
         <h1 className="mt-3 max-w-3xl text-3xl sm:text-5xl font-semibold text-slate-950 tracking-tight leading-tight">
-          A clearer way to find your next room.
+          Find a room that works for student life.
         </h1>
 
         <p className="mt-4 max-w-2xl text-base sm:text-lg leading-7 text-slate-600">
-          Browse student-posted rooms and contract transfers, with the practical details up front.
+          Browse rooms and contract transfers posted by the SBS community, with rent, deposit, location, and amenities up front.
         </p>
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -177,7 +177,7 @@ export default function ListingPage() {
             className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition"
           >
             <FiUser size={18} />
-            Browse roommates
+            Find an SBS roommate
           </Link>
         </div>
       </section>
@@ -399,10 +399,10 @@ export default function ListingPage() {
                   <div className="flex items-center justify-between text-sm mt-4 text-gray-500">
                     <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
                       <span className="bg-gray-100 px-2 py-1 rounded-md">
-                        bedrooms - {room.bedrooms || "?"}
+                        {room.bedrooms || "?"} bed
                       </span>
                       <span className="bg-gray-100 px-2 py-1 rounded-md">
-                        bathrooms - {room.bathrooms || "?"}
+                        {room.bathrooms || "?"} bath
                       </span>
                     </div>
                     <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-600 font-medium text-xs">
@@ -415,9 +415,26 @@ export default function ListingPage() {
           })}
 
         {!loading && !error && filteredRooms.length === 0 && (
-          <p className="col-span-full text-center text-gray-500">
-            No rooms match your filters.
-          </p>
+          <div className="col-span-full rounded-xl border border-slate-200 bg-white px-6 py-10 text-center">
+            <p className="font-medium text-slate-900">No SBS room posts match those filters.</p>
+            <p className="mt-1 text-sm text-slate-500">Try a wider rent range or clear the amenities.</p>
+            {(minRent || maxRent || selectedAmenities.length > 0) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedAmenities([]);
+                  setMinRent("");
+                  setMaxRent("");
+                  setTempSelectedAmenities([]);
+                  setTempMinRent("");
+                  setTempMaxRent("");
+                }}
+                className="mt-4 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
         )}
       </main>
     </div>

@@ -21,6 +21,7 @@ import {
 const UploadRoommateProfile = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     name: "",
     age: "",
@@ -136,6 +137,8 @@ const UploadRoommateProfile = () => {
   const handleBack = () => setStep((s) => Math.max(s - 1, 1));
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const {
         name,
@@ -172,8 +175,7 @@ const UploadRoommateProfile = () => {
           .upload(filePath, file);
 
         if (uploadError) {
-          toast.error(`Failed to upload ${file.name}`);
-          continue;
+          throw new Error(`UPLOAD_FAILED:${file.name}`);
         }
 
         const { data: publicUrlData } = supabase.storage
@@ -235,7 +237,9 @@ const UploadRoommateProfile = () => {
       toast.success("Roommate profile created!");
       navigate("/");
     } catch (err) {
-      if (err.response?.data?.errors) {
+      if (err.message?.startsWith("UPLOAD_FAILED:")) {
+        toast.error(`Failed to upload ${err.message.split(":").slice(1).join(":")}. Try again.`);
+      } else if (err.response?.data?.errors) {
         const first = err.response.data.errors[0];
         toast.error(first?.msg || "Validation failed");
       } else if (err.response?.data?.error) {
@@ -245,6 +249,8 @@ const UploadRoommateProfile = () => {
       } else {
         toast.error("Server error. Please try again.");
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -272,17 +278,15 @@ const UploadRoommateProfile = () => {
       <div className="flex-grow flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl w-full mx-auto bg-white rounded-2xl shadow-md p-8">
           <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-            Create Roommate Profile
+            Create your SBS roommate profile
           </h1>
 
-          <div className="flex justify-center gap-2 mb-6">
-            {[1, 2, 3].map((n) => (
-              <div
-                key={n}
-                className={`h-2 w-10 rounded-full ${
-                  step >= n ? "bg-blue-500" : "bg-gray-200"
-                }`}
-              ></div>
+          <div className="grid grid-cols-3 gap-3 mb-8" aria-label={`Step ${step} of 3`}>
+            {["Basics", "Lifestyle", "Photos"].map((label, index) => (
+              <div key={label}>
+                <span className={`block text-xs font-medium ${step >= index + 1 ? "text-blue-700" : "text-gray-400"}`}>{index + 1}. {label}</span>
+                <div className={`mt-2 h-1.5 rounded-full ${step >= index + 1 ? "bg-blue-500" : "bg-gray-200"}`} />
+              </div>
             ))}
           </div>
 
@@ -573,7 +577,7 @@ const UploadRoommateProfile = () => {
                           : updater,
                     }))
                   }
-                  maxImages={12}
+                  maxImages={8}
                 />
 
                 <div className="flex justify-between">
@@ -585,14 +589,14 @@ const UploadRoommateProfile = () => {
                   </button>
                   <button
                     onClick={handleSubmit}
-                    disabled={!validateAll()}
+                    disabled={!validateAll() || isSubmitting}
                     className={`px-6 py-2 rounded-lg ${
-                      validateAll()
+                      validateAll() && !isSubmitting
                         ? "bg-blue-500 text-white hover:bg-blue-600"
                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
                     }`}
                   >
-                    Upload Profile
+                    {isSubmitting ? "Creating profile…" : "Create profile"}
                   </button>
                 </div>
               </div>

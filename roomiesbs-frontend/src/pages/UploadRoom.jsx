@@ -95,6 +95,14 @@ const UploadRoom = () => {
     return hasContact;
   };
 
+  const validateFacebook = () => {
+    if (form.facebook && !/^https:\/\/(www\.)?facebook\.com\//i.test(form.facebook)) {
+      toast.error("Use a full https://facebook.com/... link.");
+      return false;
+    }
+    return true;
+  };
+
   const validateAll = () => {
     return form.imageUrls.length > 0;
   };
@@ -147,9 +155,7 @@ const UploadRoom = () => {
           .upload(filePath, file);
 
         if (uploadError) {
-          toast.error(`Failed to upload ${file.name}`);
-          setIsSubmitting(false);
-          continue;
+          throw new Error(`UPLOAD_FAILED:${file.name}`);
         }
 
         // Get public URL
@@ -223,7 +229,9 @@ const UploadRoom = () => {
       navigate("/rooms");
     } catch (err) {
       // Show specific error message from backend if available
-      if (err.response?.data?.message) {
+      if (err.message?.startsWith("UPLOAD_FAILED:")) {
+        toast.error(`Failed to upload ${err.message.split(":").slice(1).join(":")}. Try again.`);
+      } else if (err.response?.data?.message) {
         toast.error(err.response.data.message);
       } else if (err.response?.data?.errors) {
         const firstError = err.response.data.errors[0];
@@ -258,17 +266,15 @@ const UploadRoom = () => {
       <div className="flex-grow flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl w-full mx-auto bg-white rounded-2xl shadow-md p-8">
           <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-            Post Your Room
+            Post a room for SBS students
           </h1>
 
-          <div className="flex justify-center gap-2 mb-6">
-            {[1, 2, 3].map((n) => (
-              <div
-                key={n}
-                className={`h-2 w-10 rounded-full ${
-                  step >= n ? "bg-blue-500" : "bg-gray-200"
-                }`}
-              ></div>
+          <div className="grid grid-cols-3 gap-3 mb-8" aria-label={`Step ${step} of 3`}>
+            {["Room basics", "Details", "Photos"].map((label, index) => (
+              <div key={label}>
+                <span className={`block text-xs font-medium ${step >= index + 1 ? "text-blue-700" : "text-gray-400"}`}>{index + 1}. {label}</span>
+                <div className={`mt-2 h-1.5 rounded-full ${step >= index + 1 ? "bg-blue-500" : "bg-gray-200"}`} />
+              </div>
             ))}
           </div>
 
@@ -280,10 +286,12 @@ const UploadRoom = () => {
                   <input
                     type="text"
                     className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter a valid link"
+                    placeholder="e.g., District 7, near SBS"
+                    aria-label="Room address or neighborhood"
                     value={form.address}
                     onChange={(e) => handleChange("address", e.target.value)}
                   />
+                  <p className="mt-2 text-xs text-gray-500">A neighborhood or nearby landmark is enough. Avoid posting an apartment number publicly.</p>
                 </div>
 
                 <div>
@@ -354,9 +362,11 @@ const UploadRoom = () => {
 
                 <div className="flex justify-end">
                   <button
+                    type="button"
                     onClick={() => {
                       if (validateStep1()) handleNext();
                     }}
+                    disabled={!validateStep1()}
                     className={`px-6 py-2 rounded-lg ${
                       validateStep1()
                         ? "bg-blue-500 text-white hover:bg-blue-600"
@@ -514,9 +524,11 @@ const UploadRoom = () => {
                     Back
                   </button>
                   <button
+                    type="button"
                     onClick={() => {
-                      if (validateStep2()) handleNext();
+                      if (validateStep2() && validateFacebook()) handleNext();
                     }}
+                    disabled={!validateStep2()}
                     className={`px-6 py-2 rounded-lg ${
                       validateStep2()
                         ? "bg-blue-500 text-white hover:bg-blue-600"

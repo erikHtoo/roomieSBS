@@ -4,34 +4,26 @@ const supabase = require("../supabaseClient");
 const authMiddleware = require("../middleware/authMiddleware");
 const { body, validationResult } = require("express-validator");
 const sanitizeHtml = require("sanitize-html");
+const {
+  isOwnedStorageImageUrl,
+  removeOwnedStorageImages,
+} = require("../utils/storageImages");
 
 // Helper function to sanitize text fields and prevent XSS
 const sanitizeField = (text) =>
   sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} }).trim();
-
-const isValidImageUrl = (value) => {
-  try {
-    const url = new URL(value);
-    const allowedHosts = (process.env.ALLOWED_IMAGE_HOSTS || "")
-      .split(",")
-      .map((host) => host.trim().toLowerCase())
-      .filter(Boolean);
-    return (
-      url.protocol === "https:" &&
-      (!allowedHosts.length || allowedHosts.includes(url.hostname.toLowerCase()))
-    );
-  } catch {
-    return false;
-  }
-};
 
 const profileValidators = [
   body("person_image_urls")
     .optional()
     .isArray({ max: 8 })
     .withMessage("no more than 8 profile images are allowed")
-    .custom((urls) => urls.every(isValidImageUrl))
-    .withMessage("profile images must use an approved HTTPS host"),
+    .custom((urls, { req }) =>
+      urls.every((url) =>
+        isOwnedStorageImageUrl(url, "roommate-images", req.user.id),
+      ),
+    )
+    .withMessage("profile images must belong to the signed-in user's uploads"),
   body("person_name").optional().isString().trim().isLength({ min: 1, max: 100 }),
   body("person_gender").optional().toBoolean().isBoolean(),
   body("person_budget")
@@ -316,6 +308,15 @@ router.delete("/", authMiddleware.verifyAuth, async (req, res) => {
       .select();
 
     if (error) throw error;
+
+    if (data[0]) {
+      await removeOwnedStorageImages(
+        supabase,
+        "roommate-images",
+        data[0].person_image_urls,
+        req.user.id,
+      );
+    }
 
     res.json({ success: true, deletedProfile: data[0] });
   } catch (err) {

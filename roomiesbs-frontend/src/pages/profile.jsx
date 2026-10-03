@@ -161,6 +161,8 @@ export default function Profile() {
                   </span>
 
                   <button
+                    type="button"
+                    aria-label={roommateProfile.person_active ? "Hide roommate profile" : "Show roommate profile"}
                     onClick={async () => {
                       try {
                         const newStatus = !roommateProfile.person_active;
@@ -200,6 +202,8 @@ export default function Profile() {
 
                 {/* Edit icon */}
                 <button
+                  type="button"
+                  aria-label="Edit roommate profile"
                   onClick={() => navigate("/edit-profile")}
                   className="p-2 rounded-full hover:bg-gray-100 transition"
                   title="Edit Profile"
@@ -209,6 +213,8 @@ export default function Profile() {
 
                 {/* Delete icon */}
                 <button
+                  type="button"
+                  aria-label="Delete roommate profile"
                   onClick={() => setShowProfileDelete(true)}
                   className="p-2 rounded-full hover:bg-gray-100 transition"
                   title="Delete Profile"
@@ -335,7 +341,7 @@ export default function Profile() {
                       </p>
                       <p>
                         <strong>Price:</strong>{" "}
-                        {parseInt(listing.rent).toLocaleString("en-US")} VND /
+                        {parseInt(listing.rent).toLocaleString("en-US")} VND / month
                       </p>
                       <p>
                         <strong>Address:</strong> {listing.address}
@@ -347,6 +353,8 @@ export default function Profile() {
                   <div className="flex items-center gap-3">
                     {/* Edit icon */}
                     <button
+                      type="button"
+                      aria-label={`Edit ${listing.category || "room"} listing`}
                       onClick={() => navigate(`/edit/${listing.room_id}`)}
                       className="p-2 rounded-full hover:bg-gray-100 transition"
                       title="Edit Listing"
@@ -356,6 +364,8 @@ export default function Profile() {
 
                     {/* Delete icon */}
                     <button
+                      type="button"
+                      aria-label={`Delete ${listing.category || "room"} listing`}
                       onClick={() => {
                         setDeleteTarget(listing.room_id);
                         setConfirmOpen(true);

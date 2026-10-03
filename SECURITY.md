@@ -9,14 +9,16 @@ public GitHub issue.
 1. Set `ALLOWED_EMAIL_DOMAINS` on the backend and
    `VITE_ALLOWED_EMAIL_DOMAINS` on the frontend to the school's student email
    domain(s).
-2. Set `ALLOWED_IMAGE_HOSTS` to the hostname of the project's Supabase URL.
-3. Apply every SQL file in `supabase/migrations` to the production project.
-4. Keep Supabase email confirmation enabled. Set the Site URL to
+2. If Google sign-in is enabled, follow [GOOGLE_AUTH_SETUP.md](GOOGLE_AUTH_SETUP.md)
+   and keep the Google client secret only in Supabase.
+3. Set `ALLOWED_IMAGE_HOSTS` to the hostname of the project's Supabase URL.
+4. Apply every SQL file in `supabase/migrations` to the production project.
+5. Keep Supabase email confirmation enabled. Set the Site URL to
    `https://unimates.sbs` and allow only the exact recovery callback used by the
    app.
-5. Rotate the Supabase service-role key if it has ever appeared in logs, chat,
+6. Rotate the Supabase service-role key if it has ever appeared in logs, chat,
    a commit, or a client-side environment variable.
-6. Use `/health` for process liveness and `/ready` for deployment readiness.
+7. Use `/health` for process liveness and `/ready` for deployment readiness.
 
 ## Privacy model
 

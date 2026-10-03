@@ -4,6 +4,10 @@ const sanitizeHtml = require("sanitize-html");
 const { body, validationResult } = require("express-validator");
 const supabase = require("../supabaseClient.js");
 const authMiddleware = require("../middleware/authMiddleware.js");
+const {
+  isOwnedStorageImageUrl,
+  removeOwnedStorageImages,
+} = require("../utils/storageImages.js");
 
 // Helper function to sanitize text fields
 const sanitizeField = (text) => {
@@ -12,21 +16,8 @@ const sanitizeField = (text) => {
 };
 
 // Helper function to validate URLs (only http/https)
-const isValidUrl = (url) => {
-  try {
-    const u = new URL(url);
-    const allowedHosts = (process.env.ALLOWED_IMAGE_HOSTS || "")
-      .split(",")
-      .map((host) => host.trim().toLowerCase())
-      .filter(Boolean);
-    return (
-      u.protocol === "https:" &&
-      (!allowedHosts.length || allowedHosts.includes(u.hostname.toLowerCase()))
-    );
-  } catch {
-    return false;
-  }
-};
+const isValidUrl = (url, userId) =>
+  isOwnedStorageImageUrl(url, "room-images", userId);
 
 // ============================
 // CREATE (UploadRoom)
@@ -120,12 +111,12 @@ router.post(
       .withMessage("image_urls must be an array")
       .isArray({ max: 12 })
       .withMessage("no more than 12 images are allowed")
-      .custom((value) => {
+      .custom((value, { req }) => {
         if (Array.isArray(value)) {
           for (let url of value) {
-            if (!isValidUrl(url)) {
+            if (!isValidUrl(url, req.user.id)) {
               throw new Error(
-                "each image URL must use an approved HTTPS host"
+                "each image must belong to the signed-in user's room uploads"
               );
             }
           }
@@ -198,7 +189,7 @@ router.post(
 
       // Filter and validate image URLs (only http/https)
       const cleanImages = Array.isArray(image_urls)
-        ? image_urls.filter(isValidUrl)
+        ? image_urls.filter((url) => isValidUrl(url, req.user.id))
         : [];
 
       const { data, error } = await supabase
@@ -483,12 +474,12 @@ router.put(
       .withMessage("image_urls must be an array")
       .isArray({ max: 12 })
       .withMessage("no more than 12 images are allowed")
-      .custom((value) => {
+      .custom((value, { req }) => {
         if (Array.isArray(value)) {
           for (let url of value) {
-            if (!isValidUrl(url)) {
+            if (!isValidUrl(url, req.user.id)) {
               throw new Error(
-                "each image URL must use an approved HTTPS host"
+                "each image must belong to the signed-in user's room uploads"
               );
             }
           }
@@ -571,7 +562,7 @@ router.put(
 
       // Filter and validate image URLs (only http/https)
       const cleanImages = Array.isArray(image_urls)
-        ? image_urls.filter(isValidUrl)
+        ? image_urls.filter((url) => isValidUrl(url, req.user.id))
         : undefined;
 
       const { data, error } = await supabase
@@ -630,8 +621,14 @@ router.put("/:id/images", authMiddleware.verifyAuth, async (req, res) => {
     }
     // Filter URLs to allow only http/https (prevent javascript:, data:, etc.)
     const cleanImages = Array.isArray(image_urls)
-      ? image_urls.filter(isValidUrl)
+      ? image_urls.filter((url) => isValidUrl(url, req.user.id))
       : [];
+    if (cleanImages.length !== image_urls.length) {
+      return res.status(400).json({
+        success: false,
+        error: "Every image must belong to your room uploads",
+      });
+    }
 
     const { data, error } = await supabase
       .from("listings_table")
@@ -672,6 +669,13 @@ router.delete("/:id", authMiddleware.verifyAuth, async (req, res) => {
         .status(404)
         .json({ success: false, error: "Not found or no permission" });
     }
+
+    await removeOwnedStorageImages(
+      supabase,
+      "room-images",
+      data[0].image_urls,
+      req.user.id,
+    );
 
     res.json({ success: true, deleted: data[0] });
   } catch (err) {

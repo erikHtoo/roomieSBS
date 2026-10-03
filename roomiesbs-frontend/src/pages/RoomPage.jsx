@@ -152,10 +152,10 @@ const RoomPage = () => {
               </div>
               <div className="flex gap-8 text-gray-600 text-lg">
                 <div className="flex items-center gap-2">
-                  <FaBed className="text-red-500" /> {room.bedrooms} bedrooms
+                  <FaBed className="text-red-500" /> {room.bedrooms} {Number(room.bedrooms) === 1 ? "bedroom" : "bedrooms"}
                 </div>
                 <div className="flex items-center gap-2">
-                  <FaBath className="text-red-400" /> {room.bathrooms} bathrooms
+                  <FaBath className="text-red-400" /> {room.bathrooms} {Number(room.bathrooms) === 1 ? "bathroom" : "bathrooms"}
                 </div>
               </div>
             </div>

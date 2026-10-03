@@ -175,8 +175,7 @@ const EditRoom = () => {
             .upload(filePath, image.file);
 
           if (uploadError) {
-            toast.error(`Failed to upload ${image.file.name}`);
-            continue;
+            throw uploadError;
           }
 
           const { data: publicUrlData } = supabase.storage

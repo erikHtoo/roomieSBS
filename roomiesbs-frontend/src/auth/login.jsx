@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "../supabaseClient.js";
 import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/navbar.jsx";
+import GoogleAuthButton from "./GoogleAuthButton.jsx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -38,8 +39,16 @@ export default function Login() {
           Welcome back
         </h1>
         <p className="text-sm text-slate-600 mb-7">
-          Sign in with the email you used for your student account.
+          Sign in to manage your SBS roommate profile and room posts.
         </p>
+
+        <GoogleAuthButton onError={setErrorMsg} label="Continue with Google" />
+
+        <div className="my-6 flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          or use email
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <label className="block text-sm font-medium text-slate-800">

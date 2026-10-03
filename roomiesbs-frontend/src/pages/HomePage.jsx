@@ -43,6 +43,13 @@ const parseImageUrls = (val) => {
 
 const safeText = (value) => String(value ?? "");
 
+const genderLabel = (value) => {
+  if (typeof value === "string") {
+    return ["true", "male"].includes(value.toLowerCase()) ? "Male" : "Female";
+  }
+  return value ? "Male" : "Female";
+};
+
 export default function HomePage() {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,6 +137,9 @@ export default function HomePage() {
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
       safeText(profile.person_about)
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      safeText(profile.person_preferred_location)
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
 
@@ -239,15 +249,15 @@ export default function HomePage() {
 
       <section className="mx-auto max-w-7xl px-6 py-10 sm:py-14">
         <p className="text-xs font-semibold tracking-[0.18em] uppercase text-rose-700">
-          Roommate directory
+          SBS roommate board
         </p>
 
         <h1 className="mt-3 max-w-3xl text-3xl sm:text-5xl font-semibold text-slate-950 tracking-tight leading-tight">
-          Find a roommate you can actually live with.
+          Find an SBS roommate who fits your routine.
         </h1>
 
         <p className="mt-4 max-w-2xl text-base sm:text-lg leading-7 text-slate-600">
-          Compare budgets, locations, and living preferences from students in your school community.
+          Compare monthly budgets, preferred neighborhoods, and day-to-day habits with other students in the SBS community.
         </p>
 
         <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -256,7 +266,7 @@ export default function HomePage() {
             className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
           >
             <FiUpload size={18} />
-            {hasProfile ? "Edit my profile" : "Create my profile"}
+            {hasProfile ? "Edit my profile" : "Create roommate profile"}
           </Link>
 
           <Link
@@ -264,7 +274,7 @@ export default function HomePage() {
             className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:border-slate-400 hover:bg-slate-50 transition"
           >
             <FiHome size={18} />
-            Browse rooms
+            See rooms near SBS
           </Link>
         </div>
       </section>
@@ -279,7 +289,8 @@ export default function HomePage() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search profiles..."
+                placeholder="Search names, interests, or areas..."
+                aria-label="Search SBS roommate profiles"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-4 py-3 pr-10 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-rose-600/20 focus:border-rose-600"
@@ -531,7 +542,7 @@ export default function HomePage() {
                     <p className="text-gray-800 font-semibold text-base">
                       {profile.person_name}{" "}
                       <span className="text-gray-500 text-sm">
-                        ({profile.person_gender ? "Male" : "Female"})
+                        ({genderLabel(profile.person_gender)})
                       </span>
                     </p>
 
@@ -552,9 +563,27 @@ export default function HomePage() {
             );
           })
         ) : (
-          <p className="col-span-full text-center text-gray-500">
-            No roommate profiles match your filters.
-          </p>
+          <div className="col-span-full rounded-xl border border-slate-200 bg-white px-6 py-10 text-center">
+            <p className="font-medium text-slate-900">No SBS roommate profiles match those filters.</p>
+            <p className="mt-1 text-sm text-slate-500">Try a broader search or clear the filters.</p>
+            {(searchQuery || selectedTraits.length || movingFilter || genderFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedTraits([]);
+                  setMovingFilter("");
+                  setGenderFilter("");
+                  setTempSelectedTraits([]);
+                  setTempMovingFilter("");
+                  setTempGenderFilter("");
+                }}
+                className="mt-4 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
         )}
       </main>
     </div>

@@ -3,6 +3,7 @@ import { supabase } from "../supabaseClient.js";
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar";
 import { isAllowedSchoolEmail, schoolEmailHint } from "../utils/schoolEmail";
+import GoogleAuthButton from "./GoogleAuthButton.jsx";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -58,7 +59,18 @@ export default function Register() {
       <main className="mx-4 sm:mx-auto sm:max-w-md mt-10 sm:mt-16 bg-white border border-slate-200 rounded-xl p-6 sm:p-8">
         <p className="text-sm font-semibold text-rose-600">Student access</p>
         <h1 className="text-2xl font-semibold text-slate-950 mt-2 mb-2">Create your account</h1>
-        <p className="text-sm text-slate-600 mb-7">{schoolEmailHint}</p>
+        <p className="text-sm text-slate-600 mb-7">Join the SBS student housing community. {schoolEmailHint}</p>
+
+        <GoogleAuthButton onError={setErrorMsg} label="Sign up with Google" />
+        <p className="mt-3 text-xs leading-5 text-slate-500">
+          By continuing, you understand that your profile summary may be public; contact details stay behind sign-in.
+        </p>
+
+        <div className="my-6 flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          or use email
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
         <form onSubmit={handleRegister} className="space-y-5">
           <label className="block text-sm font-medium text-slate-800">
             Display name
