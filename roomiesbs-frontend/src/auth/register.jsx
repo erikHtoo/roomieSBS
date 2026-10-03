@@ -50,7 +50,7 @@ export default function Register() {
       setErrorMsg("We couldn't create your account. Try again or sign in instead.");
       return;
     }
-    setSuccessMsg("Check your school email to confirm your account.");
+    setSuccessMsg("Check your email to confirm your account.");
   };
 
   return (
@@ -77,7 +77,7 @@ export default function Register() {
             <input type="text" autoComplete="name" maxLength={100} value={name} onChange={(event) => setName(event.target.value)} required className="mt-2 w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-600/20 focus:border-rose-600" />
           </label>
           <label className="block text-sm font-medium text-slate-800">
-            School email
+            Email
             <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required className="mt-2 w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-600/20 focus:border-rose-600" />
           </label>
           <label className="block text-sm font-medium text-slate-800">

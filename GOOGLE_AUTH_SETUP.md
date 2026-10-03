@@ -28,14 +28,7 @@ In **Authentication → URL Configuration**:
 - Redirect URL: `https://unimates.sbs/**`
 - For local development only: `http://localhost:5173/**`
 
-## School access
+## Account access
 
-Google sign-in is not a replacement for school-domain enforcement. Set the
-same comma-separated school email domains in both deployment environments:
-
-- Frontend: `VITE_ALLOWED_EMAIL_DOMAINS`
-- Backend: `ALLOWED_EMAIL_DOMAINS`
-
-For SBS, both values should be `sbsuni.edu.vn`.
-
-The backend remains the enforcement point for authenticated API requests.
+UniMates accepts confirmed accounts from any email domain. Google sign-in is
+therefore available to any Google account once the provider is enabled.

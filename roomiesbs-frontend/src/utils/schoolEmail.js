@@ -1,16 +1,8 @@
-export const schoolEmailDomains = (
-  process.env.REACT_APP_ALLOWED_EMAIL_DOMAINS || "sbsuni.edu.vn"
-)
-  .split(",")
-  .map((domain) => domain.trim().toLowerCase())
-  .filter(Boolean);
+export const schoolEmailDomains = [];
 
 export const isAllowedSchoolEmail = (email) => {
-  if (!schoolEmailDomains.length) return true;
-  const domain = email.trim().toLowerCase().split("@").pop();
-  return schoolEmailDomains.includes(domain);
+  const cleanEmail = email.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail);
 };
 
-export const schoolEmailHint = schoolEmailDomains.length
-  ? `Use your ${schoolEmailDomains.map((domain) => `@${domain}`).join(" or ")} email.`
-  : "Use your school email address.";
+export const schoolEmailHint = "Use an email address you can access.";

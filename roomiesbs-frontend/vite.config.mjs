@@ -16,11 +16,6 @@ export default defineConfig(({ mode }) => {
       "process.env.REACT_APP_API_URL": JSON.stringify(
         env.VITE_API_URL || env.REACT_APP_API_URL || "",
       ),
-      "process.env.REACT_APP_ALLOWED_EMAIL_DOMAINS": JSON.stringify(
-        env.VITE_ALLOWED_EMAIL_DOMAINS ||
-          env.REACT_APP_ALLOWED_EMAIL_DOMAINS ||
-          "",
-      ),
     },
     build: {
       sourcemap: false,

@@ -14,7 +14,7 @@ changes.
 | --- | --- | --- |
 | Production cannot reach Supabase | Both listing APIs return HTTP 500. The Supabase hostname embedded in the deployed frontend, `nzsoxenryfiyljiwjisc.supabase.co`, does not exist in public DNS. | Create/restore the intended Supabase project, then update the Vercel and Render Supabase URL/key environment variables. Deploy both services and require `/ready` to return 200. |
 | Database/storage hardening is not yet applied remotely | Source changes cannot prove or alter the production RLS and Storage policy state. | Apply `supabase/migrations/20261003_security_hardening.sql` in the intended production project and verify the policies as anon and authenticated users. |
-| School restriction is configuration-dependent | An empty allowlist intentionally keeps local development usable. | Set matching `ALLOWED_EMAIL_DOMAINS` and `VITE_ALLOWED_EMAIL_DOMAINS` values in production. Set `ALLOWED_IMAGE_HOSTS` to the exact Supabase hostname. |
+| Accounts are open to every email domain | This is now an intentional product choice. | Keep confirmation enabled and add reporting, blocking, and moderator controls before broad promotion. Set `ALLOWED_IMAGE_HOSTS` to the exact Supabase hostname. |
 
 ## Fixed in this branch
 
@@ -24,7 +24,7 @@ changes.
 | High | Direct table access and storage ownership controls were not represented in versioned migrations. | Added RLS/revoke controls plus per-user upload/update/delete storage policies, MIME allowlists, and a 5 MB bucket limit. |
 | High | The Create React App dependency tree reported 33 vulnerabilities (18 high). | Migrated to Vite 8, upgraded React Router, removed unused packages, committed lockfiles; both production dependency audits now report zero vulnerabilities. |
 | Medium | Login code wrote the user object and bearer access token to the browser console. | Removed token/user logging and made sign-in errors non-enumerating. |
-| Medium | Any email domain could use authenticated API operations. | Added configurable school-domain enforcement to registration UX and every authenticated backend request. Confirmed email is required. |
+| Accepted tradeoff | Any confirmed email domain can use authenticated API operations. | Kept confirmed-email enforcement, strict rate limits, and authenticated contact details. Add abuse-reporting and blocking before broad promotion. |
 | Medium | Image inputs accepted any `image/*` file with no size limit. | Limited the client to JPEG/PNG/WebP up to 5 MB and added matching Storage bucket constraints. Image URL count, HTTPS, and optional host restrictions are enforced by the API. |
 | Medium | Public API errors exposed internal dependency messages. | Replaced them with stable user-facing errors while keeping server-side diagnostics. |
 | Medium | A global 1,000-request limit, 1 MB bodies, and permissive write throughput made abuse easier. | Added production read/write limits, 128 KB bodies, strict CORS allowlisting, proxy awareness, and generic 429 responses. |

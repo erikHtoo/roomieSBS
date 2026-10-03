@@ -6,9 +6,8 @@ public GitHub issue.
 
 ## Required production controls
 
-1. Set `ALLOWED_EMAIL_DOMAINS` on the backend and
-   `VITE_ALLOWED_EMAIL_DOMAINS` on the frontend to the school's student email
-   domain(s). The SBS production value is `sbsuni.edu.vn`.
+1. Keep email confirmation enabled. UniMates intentionally accepts accounts
+   from any email domain, so rate limits and abuse-reporting controls matter.
 2. If Google sign-in is enabled, follow [GOOGLE_AUTH_SETUP.md](GOOGLE_AUTH_SETUP.md)
    and keep the Google client secret only in Supabase.
 3. Set `ALLOWED_IMAGE_HOSTS` to the hostname of the project's Supabase URL.
@@ -23,8 +22,8 @@ public GitHub issue.
 ## Privacy model
 
 Public list endpoints return only the fields needed to render listing cards.
-Contact details and full listing records require a valid, optionally
-school-domain-restricted session. Search-engine indexing is disabled because
+Contact details and full listing records require a valid, confirmed session.
+Search-engine indexing is disabled because
 profiles contain student-generated personal information.
 
 Before a broad launch, add a privacy notice, acceptable-use rules, a reporting

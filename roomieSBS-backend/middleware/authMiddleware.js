@@ -24,20 +24,7 @@ async function verifyAuth(req, res, next) {
     if (!user.email_confirmed_at) {
       return res.status(403).json({
         success: false,
-        error: "Confirm your school email before continuing",
-      });
-    }
-
-    const allowedDomains = (process.env.ALLOWED_EMAIL_DOMAINS || "sbsuni.edu.vn")
-      .split(",")
-      .map((domain) => domain.trim().toLowerCase())
-      .filter(Boolean);
-    const emailDomain = user.email?.split("@").pop()?.toLowerCase();
-
-    if (allowedDomains.length && !allowedDomains.includes(emailDomain)) {
-      return res.status(403).json({
-        success: false,
-        error: "Please sign in with your school email address",
+        error: "Confirm your email before continuing",
       });
     }
 
