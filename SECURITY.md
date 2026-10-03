@@ -8,7 +8,7 @@ public GitHub issue.
 
 1. Set `ALLOWED_EMAIL_DOMAINS` on the backend and
    `VITE_ALLOWED_EMAIL_DOMAINS` on the frontend to the school's student email
-   domain(s).
+   domain(s). The SBS production value is `sbsuni.edu.vn`.
 2. If Google sign-in is enabled, follow [GOOGLE_AUTH_SETUP.md](GOOGLE_AUTH_SETUP.md)
    and keep the Google client secret only in Supabase.
 3. Set `ALLOWED_IMAGE_HOSTS` to the hostname of the project's Supabase URL.

@@ -28,7 +28,7 @@ async function verifyAuth(req, res, next) {
       });
     }
 
-    const allowedDomains = (process.env.ALLOWED_EMAIL_DOMAINS || "")
+    const allowedDomains = (process.env.ALLOWED_EMAIL_DOMAINS || "sbsuni.edu.vn")
       .split(",")
       .map((domain) => domain.trim().toLowerCase())
       .filter(Boolean);

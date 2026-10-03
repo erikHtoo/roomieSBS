@@ -1,4 +1,6 @@
-export const schoolEmailDomains = (process.env.REACT_APP_ALLOWED_EMAIL_DOMAINS || "")
+export const schoolEmailDomains = (
+  process.env.REACT_APP_ALLOWED_EMAIL_DOMAINS || "sbsuni.edu.vn"
+)
   .split(",")
   .map((domain) => domain.trim().toLowerCase())
   .filter(Boolean);

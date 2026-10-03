@@ -36,4 +36,6 @@ same comma-separated school email domains in both deployment environments:
 - Frontend: `VITE_ALLOWED_EMAIL_DOMAINS`
 - Backend: `ALLOWED_EMAIL_DOMAINS`
 
+For SBS, both values should be `sbsuni.edu.vn`.
+
 The backend remains the enforcement point for authenticated API requests.
