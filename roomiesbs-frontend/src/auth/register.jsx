@@ -63,7 +63,7 @@ export default function Register() {
 
         <GoogleAuthButton onError={setErrorMsg} label="Sign up with Google" />
         <p className="mt-3 text-xs leading-5 text-slate-500">
-          By continuing, you understand that your profile summary may be public; contact details stay behind sign-in.
+          By continuing, you accept the <Link to="/terms" className="underline hover:text-slate-800">Terms</Link> and acknowledge the <Link to="/privacy" className="underline hover:text-slate-800">Privacy Policy</Link>. Profile summaries may be public; contact details stay behind sign-in.
         </p>
 
         <div className="my-6 flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-slate-400">
@@ -87,7 +87,7 @@ export default function Register() {
           </label>
           <label className="flex gap-3 text-sm text-slate-600">
             <input type="checkbox" checked={privacyAcknowledged} onChange={(event) => setPrivacyAcknowledged(event.target.checked)} className="mt-1 h-4 w-4 rounded border-slate-300 text-rose-700 focus:ring-rose-600" />
-            <span>I understand that my profile summary may be visible without sign-in; contact details require a verified account.</span>
+            <span>I accept the <Link to="/terms" className="underline hover:text-slate-900">Terms</Link> and acknowledge the <Link to="/privacy" className="underline hover:text-slate-900">Privacy Policy</Link>. My profile summary may be visible without sign-in; contact details require a verified account.</span>
           </label>
           <button type="submit" disabled={submitting} className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-semibold hover:bg-slate-800 transition disabled:opacity-60">
             {submitting ? "Creating account…" : "Create account"}

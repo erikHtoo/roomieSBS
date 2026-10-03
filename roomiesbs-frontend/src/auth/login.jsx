@@ -43,6 +43,9 @@ export default function Login() {
         </p>
 
         <GoogleAuthButton onError={setErrorMsg} label="Continue with Google" />
+        <p className="mt-3 text-xs leading-5 text-slate-500">
+          By continuing, you accept the <Link to="/terms" className="underline hover:text-slate-800">Terms</Link> and acknowledge the <Link to="/privacy" className="underline hover:text-slate-800">Privacy Policy</Link>.
+        </p>
 
         <div className="my-6 flex items-center gap-3 text-xs font-medium uppercase tracking-wider text-slate-400">
           <span className="h-px flex-1 bg-slate-200" />

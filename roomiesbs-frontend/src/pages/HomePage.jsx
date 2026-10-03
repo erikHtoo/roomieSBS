@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import Navbar from "../components/navbar.jsx";
+import Footer from "../components/footer.jsx";
 import { useAuth } from "../auth/useAuth.js";
 import { FiSearch, FiHome, FiUpload } from "react-icons/fi";
 import {
@@ -586,6 +587,7 @@ export default function HomePage() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }
