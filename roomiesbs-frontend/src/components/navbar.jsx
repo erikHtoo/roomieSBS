@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { FiUser, FiMapPin, FiUsers, FiMenu, FiX, FiRepeat, FiLogIn } from "react-icons/fi";
+import { FiUser, FiMapPin, FiUsers, FiMenu, FiX, FiRepeat, FiLogIn, FiShield } from "react-icons/fi";
 import { useAuth } from "../auth/useAuth";
 
 const navItem = ({ isActive }) =>
@@ -18,6 +18,7 @@ export default function Navbar() {
     { to: "/", label: "Roommates", icon: FiUsers, end: true },
     { to: "/rooms", label: "Rooms", icon: FiMapPin },
     { to: "/exchange", label: "Exchange rate", icon: FiRepeat },
+    { to: "/safety", label: "Safety", icon: FiShield },
   ];
 
   return (

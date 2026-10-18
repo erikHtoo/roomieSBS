@@ -1,5 +1,6 @@
 import Navbar from "../components/navbar.jsx";
 import Footer from "../components/footer.jsx";
+import { SUPPORT_EMAIL } from "../utils/support.js";
 
 const Section = ({ title, children }) => (
   <section>
@@ -15,7 +16,7 @@ export default function PrivacyPage() {
       <main className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-700">UniMates policies</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Privacy policy</h1>
-        <p className="mt-3 text-sm text-slate-500">Effective October 3, 2026</p>
+        <p className="mt-3 text-sm text-slate-500">Effective October 19, 2026</p>
 
         <div className="mt-10 space-y-9 rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
           <Section title="What UniMates collects">
@@ -36,11 +37,11 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="Retention and your choices">
-            <p>Information remains available while your account, profile, or post is active. You can edit or remove your roommate profile and room posts from your account. To request account deletion or help with personal data, use the support email shown on the Google consent screen or contact the UniMates operator.</p>
+            <p>Information remains available while your account, profile, or post is active. You can edit or remove your roommate profile and room posts from your account. To request complete account deletion or help with personal data, email <a className="font-medium text-rose-800 underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
           </Section>
 
           <Section title="Safety and updates">
-            <p>Internet services cannot guarantee absolute security. Use the in-app controls to limit what you share and report suspicious activity. We may update this policy as UniMates changes; the effective date above will be revised when we do.</p>
+            <p>Internet services cannot guarantee absolute security. Use the in-app controls to limit what you share and report suspicious activity from the relevant listing or profile. We may update this policy as UniMates changes; the effective date above will be revised when we do.</p>
           </Section>
         </div>
       </main>

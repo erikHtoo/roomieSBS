@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/navbar";
+import ReportConcernLink from "../components/ReportConcernLink.jsx";
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { safeFacebookUrl } from "../utils/contactLinks";
 import { FaMapMarkerAlt } from "react-icons/fa";
@@ -22,9 +23,10 @@ import {
 const RoomPage = () => {
   const { id } = useParams();
   const [room, setRoom] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [images, setImages] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const [roomCount, setRoomCount] = useState(0);
   const { session } = useAuth();
 
   useEffect(() => {
@@ -38,28 +40,38 @@ const RoomPage = () => {
         setImages(res.data.room.image_urls || []);
       } catch (err) {
         console.error("Failed to fetch room:", err);
-      }
-    };
-
-    const fetchRoomCount = async () => {
-      try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/rooms`);
-        setRoomCount(Array.isArray(res.data.rooms) ? res.data.rooms.length : 0);
-      } catch (err) {
-        console.error("Failed to fetch room count:", err);
+        setError("This room listing is unavailable or could not be loaded.");
+      } finally {
+        setLoading(false);
       }
     };
 
     if (session?.access_token) {
       fetchRoom();
-      fetchRoomCount();
     }
   }, [id, session]);
 
-  if (!room)
+  if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600">
-        Loading...
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <main className="grid min-h-[70vh] place-items-center px-6 text-sm text-slate-600" role="status">
+          Loading room…
+        </main>
+      </div>
+    );
+
+  if (error || !room)
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Navbar />
+        <main className="grid min-h-[70vh] place-items-center px-6 text-center">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-950">Room unavailable</h1>
+            <p className="mt-3 text-slate-600">{error || "This room listing could not be found."}</p>
+            <Link to="/rooms" className="mt-6 inline-flex rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Browse available rooms</Link>
+          </div>
+        </main>
       </div>
     );
 
@@ -266,6 +278,11 @@ const RoomPage = () => {
               </div>
             </div>
           </div>
+
+          <div className="mt-10 border-t border-slate-200 px-3 pt-7">
+            <p className="mb-3 text-sm leading-6 text-slate-600">Something misleading, unsafe, or no longer available?</p>
+            <ReportConcernLink contentType="room listing" contentId={id} />
+          </div>
         </motion.div>
       </div>
 
@@ -276,6 +293,8 @@ const RoomPage = () => {
           onClick={closeModal}
         >
           <button
+            type="button"
+            aria-label="Close image viewer"
             onClick={closeModal}
             className="absolute top-4 right-6 text-white text-3xl font-bold"
           >
@@ -283,6 +302,8 @@ const RoomPage = () => {
           </button>
 
           <button
+            type="button"
+            aria-label="Previous room image"
             onClick={showPrev}
             className="absolute left-6 text-white text-4xl"
           >
@@ -296,6 +317,8 @@ const RoomPage = () => {
           />
 
           <button
+            type="button"
+            aria-label="Next room image"
             onClick={showNext}
             className="absolute right-6 text-white text-4xl"
           >

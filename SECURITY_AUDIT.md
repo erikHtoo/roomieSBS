@@ -1,6 +1,6 @@
 # UniMates release security audit
 
-Date: 2026-10-03
+Date: 2026-10-19
 Scope: public site, frontend source, Express API, dependency trees, repository
 secret indicators, and documented Supabase access model.
 
@@ -8,13 +8,25 @@ This is a point-in-time review, not a guarantee that no vulnerability exists.
 Repeat it after infrastructure, schema, authentication, or major dependency
 changes.
 
-## Release blockers
+## Production verification
 
-| Finding | Evidence | Required action |
-| --- | --- | --- |
-| Production cannot reach Supabase | Both listing APIs return HTTP 500. The Supabase hostname embedded in the deployed frontend, `nzsoxenryfiyljiwjisc.supabase.co`, does not exist in public DNS. | Create/restore the intended Supabase project, then update the Vercel and Render Supabase URL/key environment variables. Deploy both services and require `/ready` to return 200. |
-| Database/storage hardening is not yet applied remotely | Source changes cannot prove or alter the production RLS and Storage policy state. | Apply `supabase/migrations/20261003_security_hardening.sql` in the intended production project and verify the policies as anon and authenticated users. |
-| Accounts are open to every email domain | This is now an intentional product choice. | Keep confirmation enabled and add reporting, blocking, and moderator controls before broad promotion. Set `ALLOWED_IMAGE_HOSTS` to the exact Supabase hostname. |
+Verified on October 19, 2026:
+
+- `https://unimates.sbs/` returns HTTP 200 over HTTPS with CSP, HSTS,
+  anti-framing, permissions, referrer, and MIME-sniffing protections.
+- The Render API `/health` and dependency-aware `/ready` endpoints return HTTP
+  200, and public room/profile feeds return data successfully.
+- Frontend and backend production dependency audits report zero known
+  vulnerabilities, and the frontend production build succeeds.
+- The launch-poster QR code decodes to the canonical
+  `https://unimates.sbs/` URL.
+- A public Safety page, visible support contact, and contextual email-report
+  links are available from the navigation, footer, room pages, and roommate
+  pages.
+
+Production RLS and Storage policy state must still be verified directly in
+Supabase after any schema, bucket, or authentication change. Source and API
+behavior alone cannot prove the remote policy matrix.
 
 ## Fixed in this branch
 
@@ -39,17 +51,16 @@ changes.
 These should be completed before inviting the whole school, even though they
 are not all code-execution vulnerabilities:
 
-- Add an in-product report, block, and moderator review workflow, including an
-  emergency contact and response owner.
-- Publish privacy, acceptable-use, and safety notices. Explain what is public,
-  what is visible only after sign-in, retention periods, and how students can
-  request complete deletion.
+- Replace the email-based reporting path with a durable report queue, blocking,
+  moderator review tools, audit history, and a documented response owner.
+- Keep the published privacy, acceptable-use, and safety notices current as the
+  service changes.
 - Decide whether profile and room summaries should be public at all. Currently
   summaries are public but contact details require confirmed sign-in.
 - Make image buckets private and serve short-lived signed URLs if student photos
   should not be world-readable to anyone who has the URL.
-- Delete uploaded objects when a listing/profile is deleted, and add a verified
-  full-account deletion flow. Current deletes remove database records only.
+- Add a verified full-account deletion flow. Listing and profile deletion now
+  removes owned uploaded objects, but it does not delete the Supabase account.
 - Add per-user abuse controls, content moderation, spam prevention, and audit
   logging. IP rate limits alone do not stop a signed-in scraper.
 - Review every existing production record for accidental phone numbers,

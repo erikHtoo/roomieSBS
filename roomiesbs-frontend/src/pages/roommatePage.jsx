@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/navbar";
+import ReportConcernLink from "../components/ReportConcernLink.jsx";
 import axios from "axios";
 import { useAuth } from "../auth/useAuth.js";
 import { useParams } from "react-router-dom";
@@ -353,6 +354,11 @@ const RoommatePage = () => {
               )}
             </div>
           </div>
+
+          <div className="mt-10 border-t border-slate-200 px-3 pt-7">
+            <p className="mb-3 text-sm leading-6 text-slate-600">Something misleading, unsafe, or inappropriate?</p>
+            <ReportConcernLink contentType="roommate profile" contentId={id} />
+          </div>
         </motion.div>
       </div>
 
@@ -363,6 +369,8 @@ const RoommatePage = () => {
           onClick={closeModal}
         >
           <button
+            type="button"
+            aria-label="Close image viewer"
             onClick={closeModal}
             className="absolute top-4 right-6 text-white text-3xl font-bold"
           >
@@ -370,6 +378,8 @@ const RoommatePage = () => {
           </button>
 
           <button
+            type="button"
+            aria-label="Previous profile image"
             onClick={showPrev}
             className="absolute left-6 text-white text-4xl"
           >
@@ -383,6 +393,8 @@ const RoommatePage = () => {
           />
 
           <button
+            type="button"
+            aria-label="Next profile image"
             onClick={showNext}
             className="absolute right-6 text-white text-4xl"
           >

@@ -1,5 +1,6 @@
 import Navbar from "../components/navbar.jsx";
 import Footer from "../components/footer.jsx";
+import { SUPPORT_EMAIL } from "../utils/support.js";
 
 const Section = ({ title, children }) => (
   <section>
@@ -15,7 +16,7 @@ export default function TermsPage() {
       <main className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-700">UniMates policies</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Terms of use</h1>
-        <p className="mt-3 text-sm text-slate-500">Effective October 3, 2026</p>
+        <p className="mt-3 text-sm text-slate-500">Effective October 19, 2026</p>
 
         <div className="mt-10 space-y-9 rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
           <Section title="A community board, not a broker">
@@ -39,7 +40,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="Changes and contact">
-            <p>We may update these terms as the service evolves. Continuing to use UniMates after an update means you accept the revised terms. Questions can be sent through the support contact shown during Google sign-in or to the UniMates operator.</p>
+            <p>We may update these terms as the service evolves. Continuing to use UniMates after an update means you accept the revised terms. Questions, abuse reports, and takedown requests can be sent to <a className="font-medium text-rose-800 underline" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
           </Section>
         </div>
       </main>

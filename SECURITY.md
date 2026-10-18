@@ -18,6 +18,8 @@ public GitHub issue.
 6. Rotate the Supabase service-role key if it has ever appeared in logs, chat,
    a commit, or a client-side environment variable.
 7. Use `/health` for process liveness and `/ready` for deployment readiness.
+8. Keep the Safety page and report links visible, monitor the published support
+   mailbox, and document who owns responses during a school-wide launch.
 
 ## Privacy model
 
@@ -26,6 +28,8 @@ Contact details and full listing records require a valid, confirmed session.
 Search-engine indexing is disabled because
 profiles contain student-generated personal information.
 
-Before a broad launch, add a privacy notice, acceptable-use rules, a reporting
-and blocking workflow, moderator tooling, and a documented retention/deletion
-process. These are product-safety controls, not optional polish.
+The site publishes privacy, acceptable-use, safety, and email-reporting paths.
+Before scaling beyond a small school launch, replace email-only reports with a
+durable queue, add blocking and moderator tooling, and document the full
+retention/account-deletion process. These are product-safety controls, not
+optional polish.

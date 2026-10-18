@@ -23,6 +23,7 @@ const EditRoommateProfile = lazy(() => import("./pages/editRoommate.jsx"));
 const Exchange = lazy(() => import("./pages/exchange.jsx"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage.jsx"));
 const TermsPage = lazy(() => import("./pages/TermsPage.jsx"));
+const SafetyPage = lazy(() => import("./pages/SafetyPage.jsx"));
 
 function NotFound() {
   return (
@@ -85,6 +86,7 @@ function App() {
             <Route path="/exchange" element={<Exchange />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
+            <Route path="/safety" element={<SafetyPage />} />
 
             {/* Protected Routes */}
             <Route
